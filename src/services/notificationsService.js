@@ -59,3 +59,71 @@ export const createNewMessageNotification = async (recipientUserId, senderUserId
     console.error('Erreur création notification:', error)
   }
 }
+
+/**
+ * Créer une notification pour un like sur un post
+ */
+export const createPostLikedNotification = async (recipientUserId, likerId, likerName, postContent) => {
+  try {
+    const notificationRef = doc(collection(db, 'users', recipientUserId, 'notifications'))
+    await setDoc(notificationRef, {
+      type: 'post_liked',
+      title: '❤️ Votre post a été aimé',
+      message: `${likerName} a aimé votre publication: "${postContent.substring(0, 50)}${postContent.length > 50 ? '...' : ''}"`,
+      fromUserId: likerId,
+      fromUserName: likerName,
+      read: false,
+      createdAt: serverTimestamp()
+    })
+  } catch (error) {
+    console.error('Erreur création notification:', error)
+  }
+}
+
+/**
+ * Créer une notification pour un commentaire sur un post
+ */
+export const createPostCommentedNotification = async (recipientUserId, commenterId, commenterName, postContent, commentContent) => {
+  try {
+    const notificationRef = doc(collection(db, 'users', recipientUserId, 'notifications'))
+    await setDoc(notificationRef, {
+      type: 'post_commented',
+      title: '💬 Nouveau commentaire sur votre post',
+      message: `${commenterName} a commenté: "${commentContent.substring(0, 50)}${commentContent.length > 50 ? '...' : ''}"`,
+      fromUserId: commenterId,
+      fromUserName: commenterName,
+      read: false,
+      createdAt: serverTimestamp()
+    })
+  } catch (error) {
+    console.error('Erreur création notification:', error)
+  }
+}
+
+/**
+ * Créer une notification quand une église publie
+ */
+export const createChurchPublishedNotification = async (recipientUserId, churchId, churchName, postContent, postCategory) => {
+  try {
+    const categoryEmoji = {
+      spirituel: '✨',
+      opportunites: '💼',
+      evenements: '📅',
+      temoignages: '💝'
+    }[postCategory] || '📝'
+    
+    const notificationRef = doc(collection(db, 'users', recipientUserId, 'notifications'))
+    await setDoc(notificationRef, {
+      type: 'church_published',
+      title: `${categoryEmoji} Nouvelle publication de ${churchName}`,
+      message: postContent.substring(0, 80) + (postContent.length > 80 ? '...' : ''),
+      fromUserId: churchId,
+      fromUserName: churchName,
+      postCategory: postCategory,
+      read: false,
+      createdAt: serverTimestamp()
+    })
+  } catch (error) {
+    console.error('Erreur création notification:', error)
+  }
+}

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
-import { doc, getDoc, collection, addDoc, updateDoc, deleteDoc, increment, query, where, orderBy, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, addDoc, updateDoc, deleteDoc, increment, query, where, orderBy, onSnapshot, serverTimestamp, setDoc, getDocs } from 'firebase/firestore'
 import { Heart, MessageCircle, Share2, Bookmark, Loader, Send, Trash2, FileEdit, CheckCircle2 } from 'lucide-react'
+import { createPostLikedNotification, createPostCommentedNotification, createChurchPublishedNotification } from '../services/notificationsService'
 
 function Feed() {
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [postContent, setPostContent] = useState('')
+  const [postCategory, setPostCategory] = useState('spirituel')
   const [posts, setPosts] = useState([])
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
@@ -24,7 +26,6 @@ function Feed() {
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingCommentText, setEditingCommentText] = useState({})
   const [editingCommentLoading, setEditingCommentLoading] = useState(false)
-  const [commentLikes, setCommentLikes] = useState({})
 
   // Récupérer l'utilisateur actuel
   useEffect(() => {
@@ -119,16 +120,9 @@ function Feed() {
       posts.forEach(post => {
         checkPostLike(post.id)
         checkPostSaved(post.id)
-        
-        // Charger les likes des commentaires du post
-        if (postComments[post.id]) {
-          postComments[post.id].forEach(comment => {
-            checkCommentLike(post.id, comment.id)
-          })
-        }
       })
     }
-  }, [posts, user, postComments])
+  }, [posts, user])
 
   const checkPostLike = async (postId) => {
     if (user) {
@@ -190,6 +184,8 @@ function Feed() {
           content: postContent,
           authorId: user.uid,
           authorName: user.displayName || user.email,
+          authorAccountType: userData?.accountType || 'Fidèle',
+          authorEgliseName: userData?.egliseName || null,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           likes: 0,
@@ -219,8 +215,24 @@ function Feed() {
         await deleteDoc(likeRef)
         await updateDoc(postRef, { likes: increment(-1) })
       } else {
+        // Nouveau like
         await setDoc(likeRef, { createdAt: serverTimestamp() })
         await updateDoc(postRef, { likes: increment(1) })
+
+        // Créer une notification
+        const postSnap = await getDoc(postRef)
+        if (postSnap.exists()) {
+          const postData = postSnap.data()
+          // Ne pas envoyer de notification si c'est son propre post
+          if (postData.authorId !== user.uid) {
+            await createPostLikedNotification(
+              postData.authorId,
+              user.uid,
+              userData?.prenom ? `${userData.prenom} ${userData.nom}` : user.email,
+              postData.content
+            )
+          }
+        }
       }
       checkPostLike(postId)
     } catch (error) {
@@ -249,54 +261,18 @@ function Feed() {
     }
   }
 
-  const handleLikeComment = async (postId, commentId) => {
-    if (!user) return
-    try {
-      const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
-      const commentRef = doc(db, 'posts', postId, 'comments', commentId)
-      const likeSnap = await getDoc(likeRef)
-
-      if (likeSnap.exists()) {
-        await deleteDoc(likeRef)
-        await updateDoc(commentRef, { likes: increment(-1) })
-      } else {
-        await setDoc(likeRef, { createdAt: serverTimestamp() })
-        await updateDoc(commentRef, { likes: increment(1) })
-      }
-      checkCommentLike(postId, commentId)
-    } catch (error) {
-      console.error("Erreur like commentaire:", error)
-    }
-  }
-
-  const checkCommentLike = async (postId, commentId) => {
-    if (!user) return
-    try {
-      const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
-      const likeSnap = await getDoc(likeRef)
-      const commentRef = doc(db, 'posts', postId, 'comments', commentId)
-      const commentSnap = await getDoc(commentRef)
-      
-      const commentData = commentSnap.data()
-      setCommentLikes(prev => ({
-        ...prev,
-        [`${postId}_${commentId}`]: likeSnap.exists(),
-        [`${postId}_${commentId}_count`]: commentData?.likes || 0
-      }))
-    } catch (error) {
-      console.error('Erreur vérification like:', error)
-    }
-  }
-
   const handleAddComment = async (postId) => {
     const text = commentText[postId]
     if (!text?.trim() || !user) return
 
     try {
+      // Ajouter le commentaire
       await addDoc(collection(db, 'posts', postId, 'comments'), {
         text,
         userId: user.uid,
         userName: userData?.prenom ? `${userData.prenom} ${userData.nom}` : user.email,
+        userAccountType: userData?.accountType || 'Fidèle',
+        userEgliseName: userData?.egliseName || null,
         userAvatar: user.photoURL || null,
         createdAt: serverTimestamp(),
         parentCommentId: null
@@ -305,6 +281,23 @@ function Feed() {
       await updateDoc(doc(db, 'posts', postId), {
         comments: increment(1)
       })
+
+      // Créer une notification
+      const postRef = doc(db, 'posts', postId)
+      const postSnap = await getDoc(postRef)
+      if (postSnap.exists()) {
+        const postData = postSnap.data()
+        // Ne pas envoyer de notification si c'est son propre post
+        if (postData.authorId !== user.uid) {
+          await createPostCommentedNotification(
+            postData.authorId,
+            user.uid,
+            userData?.prenom ? `${userData.prenom} ${userData.nom}` : user.email,
+            postData.content,
+            text
+          )
+        }
+      }
 
       setCommentText(prev => ({
         ...prev,
@@ -324,6 +317,8 @@ function Feed() {
         text,
         userId: user.uid,
         userName: userData?.prenom ? `${userData.prenom} ${userData.nom}` : user.email,
+        userAccountType: userData?.accountType || 'Fidèle',
+        userEgliseName: userData?.egliseName || null,
         userAvatar: user.photoURL || null,
         createdAt: serverTimestamp(),
         parentCommentId: parentCommentId
@@ -450,8 +445,28 @@ function Feed() {
     alert('Lien copié dans le presse-papiers!')
   }
 
+  const getCommentAuthorName = (comment) => {
+    // Si c'est une église, afficher le nom de l'église
+    if (comment?.userAccountType === 'Église' && comment?.userEgliseName) {
+      return comment.userEgliseName
+    }
+    // Sinon afficher le nom du fidèle
+    return comment?.userName || 'Utilisateur'
+  }
+
   const getAuthorFullName = (post) => {
+    // Utiliser d'abord les données stockées dans le post
+    if (post?.authorAccountType === 'Église' && post?.authorEgliseName) {
+      return post.authorEgliseName
+    }
+    
+    // Fallback sur les données récupérées de l'auteur
     const author = postAuthors[post.authorId]
+    if (author?.accountType === 'Église' && author?.egliseName) {
+      return author.egliseName
+    }
+    
+    // Sinon retourner le nom du fidèle
     if (author?.prenom && author?.nom) {
       return `${author.prenom} ${author.nom}`
     }
@@ -681,10 +696,10 @@ function Feed() {
                             {/* Commentaire principal */}
                             <div className='flex space-x-3'>
                               <div className='w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0'>
-                                {comment.userName?.charAt(0)}
+                                {getCommentAuthorName(comment)?.charAt(0)}
                               </div>
                               <div className='flex-1 bg-white rounded-lg px-3 py-2 border border-gray-200 hover:shadow-sm transition'>
-                                <p className='font-semibold text-sm text-gray-900'>{comment.userName}</p>
+                                <p className='font-semibold text-sm text-gray-900'>{getCommentAuthorName(comment)}</p>
                                 {editingCommentId === comment.id ? (
                                   <div className='mt-2 space-y-2'>
                                     <textarea
@@ -715,24 +730,15 @@ function Feed() {
                                 ) : (
                                   <>
                                     <p className='text-sm text-gray-800 mt-1'>{comment.text}</p>
-                                    <div className='flex space-x-3 mt-2 text-xs'>
+                                    <div className='flex space-x-2 mt-2 text-xs'>
                                       <p className='text-gray-500'>{formatDate(comment.createdAt)}</p>
                                       {user && (
-                                        <>
-                                          <button
-                                            onClick={() => handleLikeComment(post.id, comment.id)}
-                                            className='text-gray-600 hover:text-red-600 font-medium flex items-center gap-1 transition-colors'
-                                          >
-                                            <Heart className={`w-3 h-3 ${commentLikes[`${post.id}_${comment.id}`] ? 'fill-red-600 text-red-600' : ''}`} />
-                                            {commentLikes[`${post.id}_${comment.id}_count`] || comment.likes || 0}
-                                          </button>
-                                          <button
-                                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                            className='text-blue-600 hover:text-blue-700 font-medium'
-                                          >
-                                            Répondre
-                                          </button>
-                                        </>
+                                        <button
+                                          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                          className='text-blue-600 hover:text-blue-700 font-medium'
+                                        >
+                                          Répondre
+                                        </button>
                                       )}
                                     </div>
                                   </>
@@ -791,10 +797,10 @@ function Feed() {
                                 {replies.map((reply) => (
                                   <div key={reply.id} className='flex space-x-2'>
                                     <div className='w-7 h-7 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0'>
-                                      {reply.userName?.charAt(0)}
+                                      {getCommentAuthorName(reply)?.charAt(0)}
                                     </div>
                                     <div className='flex-1 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100'>
-                                      <p className='font-semibold text-xs text-gray-900'>{reply.userName}</p>
+                                      <p className='font-semibold text-xs text-gray-900'>{getCommentAuthorName(reply)}</p>
                                       {editingCommentId === reply.id ? (
                                         <div className='mt-2 space-y-1'>
                                           <textarea
@@ -825,18 +831,7 @@ function Feed() {
                                       ) : (
                                         <>
                                           <p className='text-xs text-gray-800 mt-1'>{reply.text}</p>
-                                          <div className='flex space-x-2 mt-1 text-xs'>
-                                            <p className='text-gray-500'>{formatDate(reply.createdAt)}</p>
-                                            {user && (
-                                              <button
-                                                onClick={() => handleLikeComment(post.id, reply.id)}
-                                                className='text-gray-600 hover:text-red-600 font-medium flex items-center gap-1 transition-colors'
-                                              >
-                                                <Heart className={`w-3 h-3 ${commentLikes[`${post.id}_${reply.id}`] ? 'fill-red-600 text-red-600' : ''}`} />
-                                                {commentLikes[`${post.id}_${reply.id}_count`] || reply.likes || 0}
-                                              </button>
-                                            )}
-                                          </div>
+                                          <p className='text-xs text-gray-500 mt-1'>{formatDate(reply.createdAt)}</p>
                                         </>
                                       )}
                                     </div>

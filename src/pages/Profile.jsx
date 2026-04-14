@@ -13,8 +13,9 @@ function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [userPosts, setUserPosts] = useState([])
+  const [savedPosts, setSavedPosts] = useState([])
   const [faithCompanions, setFaithCompanions] = useState([])
-  const [followersCount, setFollowersCount] = useState(0)
+  const [incomingRequests, setIncomingRequests] = useState([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [followingLoading, setFollowingLoading] = useState(false)
   const [profileUserId, setProfileUserId] = useState(null)
@@ -109,21 +110,59 @@ function Profile() {
     }
   }, [user, profileUserId])
 
-  // Compter les personnes qui suivent ce profil
+  // Charger les demandes reçues (seulement pour son propre profil)
   useEffect(() => {
-    if (!profileUserId) return
+    if (user && isOwnProfile) {
+      const requestsRef = collection(db, 'users', user.uid, 'companionRequests')
+      const unsub = onSnapshot(requestsRef, async (snapshot) => {
+        const requestIds = snapshot.docs.map(doc => doc.id)
+        
+        const requestsData = await Promise.all(
+          requestIds.map(async (uid) => {
+            const userRef = doc(db, 'users', uid)
+            const userSnap = await getDoc(userRef)
+            return userSnap.exists() ? { id: uid, ...userSnap.data() } : null
+          })
+        )
+        
+        setIncomingRequests(requestsData.filter(r => r !== null))
+      })
+      return () => unsub()
+    }
+  }, [user, isOwnProfile])
 
-    const companionsGroupQuery = query(
-      collectionGroup(db, 'faithCompanions'),
-      where('__name__', '==', profileUserId)
-    )
-
-    const unsub = onSnapshot(companionsGroupQuery, (snapshot) => {
-      setFollowersCount(snapshot.size)
-    })
-
-    return () => unsub()
-  }, [profileUserId])
+  // Charger les publications sauvegardées (seulement pour son propre profil)
+  useEffect(() => {
+    if (user && isOwnProfile) {
+      const savedPostsQuery = query(
+        collection(db, 'savedPosts'),
+        where('userId', '==', user.uid),
+        orderBy('savedAt', 'desc')
+      )
+      const unsub = onSnapshot(savedPostsQuery, async (snapshot) => {
+        const savedPostsData = await Promise.all(
+          snapshot.docs.map(async (savedDoc) => {
+            try {
+              const postRef = doc(db, 'posts', savedDoc.data().postId)
+              const postSnap = await getDoc(postRef)
+              return postSnap.exists() 
+                ? { 
+                    id: savedDoc.data().postId, 
+                    ...postSnap.data(),
+                    savedAt: savedDoc.data().savedAt
+                  } 
+                : null
+            } catch (error) {
+              console.error('Erreur chargement post sauvegardé:', error)
+              return null
+            }
+          })
+        )
+        setSavedPosts(savedPostsData.filter(p => p !== null))
+      })
+      return () => unsub()
+    }
+  }, [user, isOwnProfile])
 
   // Ajouter/Retirer un compagnon de foi
   const handleFollowToggle = async () => {
@@ -199,6 +238,15 @@ function Profile() {
 
   const getInitials = () => {
     return (formData.prenom?.charAt(0) + formData.nom?.charAt(0)).toUpperCase()
+  }
+
+  const getPostAuthorName = (post) => {
+    // Si c'est une église, afficher le nom de l'église
+    if (post?.authorAccountType === 'Église' && post?.authorEgliseName) {
+      return post.authorEgliseName
+    }
+    // Sinon afficher autorName (prenom + nom)
+    return post?.authorName || 'Utilisateur'
   }
 
   const formatDate = (date) => {
@@ -500,11 +548,15 @@ function Profile() {
           </div>
           <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
             <p className='text-3xl font-bold text-blue-600 mb-2'>{faithCompanions.length}</p>
-            <p className='text-gray-600 font-medium'>Compagnons de Foi</p>
+            <p className='text-gray-600 font-medium'>Compagnons de foi</p>
           </div>
           <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
-            <p className='text-3xl font-bold text-green-600 mb-2'>{followersCount}</p>
-            <p className='text-gray-600 font-medium'>Suivi par</p>
+            <p className='text-3xl font-bold text-green-600 mb-2'>
+              {isOwnProfile ? incomingRequests.length : (isFollowing ? '✓' : '—')}
+            </p>
+            <p className='text-gray-600 font-medium'>
+              {isOwnProfile ? 'Demandes en attente' : (isFollowing ? 'Compagnon suivi' : 'Non compagnon')}
+            </p>
           </div>
         </div>
 
@@ -580,6 +632,38 @@ function Profile() {
             </div>
           )}
         </div>
+
+        {/* Publications sauvegardées */}
+        {isOwnProfile && (
+          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
+            <h2 className='text-2xl font-bold text-gray-900 mb-4'>Publications sauvegardées</h2>
+            {savedPosts.length === 0 ? (
+              <p className='text-gray-500 text-center py-8'>Aucune publication sauvegardée pour le moment</p>
+            ) : (
+              <div className='space-y-4'>
+                {savedPosts.map((post) => (
+                  <div key={post.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition'>
+                    <div className='flex items-start justify-between'>
+                      <div className='flex-1'>
+                        <p className='text-gray-800 line-clamp-2 mb-2'>{post.content}</p>
+                        <div className='flex items-center justify-between text-xs text-gray-500'>
+                          <span>Par: <span className='font-medium text-gray-700'>{getPostAuthorName(post)}</span></span>
+                          <span>{formatDate(post.createdAt)}</span>
+                        </div>
+                      </div>
+                      <div className='ml-4 text-right text-xs'>
+                        <div className='space-x-2'>
+                          <span>❤️ {post.likes || 0}</span>
+                          <span>💬 {post.comments || 0}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Section Déconnexion */}
         <div className='bg-white rounded-xl shadow-sm border border-red-200 p-6'>
