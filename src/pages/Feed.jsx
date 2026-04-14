@@ -24,6 +24,7 @@ function Feed() {
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingCommentText, setEditingCommentText] = useState({})
   const [editingCommentLoading, setEditingCommentLoading] = useState(false)
+  const [commentLikes, setCommentLikes] = useState({})
 
   // Récupérer l'utilisateur actuel
   useEffect(() => {
@@ -118,9 +119,16 @@ function Feed() {
       posts.forEach(post => {
         checkPostLike(post.id)
         checkPostSaved(post.id)
+        
+        // Charger les likes des commentaires du post
+        if (postComments[post.id]) {
+          postComments[post.id].forEach(comment => {
+            checkCommentLike(post.id, comment.id)
+          })
+        }
       })
     }
-  }, [posts, user])
+  }, [posts, user, postComments])
 
   const checkPostLike = async (postId) => {
     if (user) {
@@ -238,6 +246,45 @@ function Feed() {
       checkPostSaved(postId)
     } catch (error) {
       console.error("Erreur save:", error)
+    }
+  }
+
+  const handleLikeComment = async (postId, commentId) => {
+    if (!user) return
+    try {
+      const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
+      const commentRef = doc(db, 'posts', postId, 'comments', commentId)
+      const likeSnap = await getDoc(likeRef)
+
+      if (likeSnap.exists()) {
+        await deleteDoc(likeRef)
+        await updateDoc(commentRef, { likes: increment(-1) })
+      } else {
+        await setDoc(likeRef, { createdAt: serverTimestamp() })
+        await updateDoc(commentRef, { likes: increment(1) })
+      }
+      checkCommentLike(postId, commentId)
+    } catch (error) {
+      console.error("Erreur like commentaire:", error)
+    }
+  }
+
+  const checkCommentLike = async (postId, commentId) => {
+    if (!user) return
+    try {
+      const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
+      const likeSnap = await getDoc(likeRef)
+      const commentRef = doc(db, 'posts', postId, 'comments', commentId)
+      const commentSnap = await getDoc(commentRef)
+      
+      const commentData = commentSnap.data()
+      setCommentLikes(prev => ({
+        ...prev,
+        [`${postId}_${commentId}`]: likeSnap.exists(),
+        [`${postId}_${commentId}_count`]: commentData?.likes || 0
+      }))
+    } catch (error) {
+      console.error('Erreur vérification like:', error)
     }
   }
 
@@ -668,15 +715,24 @@ function Feed() {
                                 ) : (
                                   <>
                                     <p className='text-sm text-gray-800 mt-1'>{comment.text}</p>
-                                    <div className='flex space-x-2 mt-2 text-xs'>
+                                    <div className='flex space-x-3 mt-2 text-xs'>
                                       <p className='text-gray-500'>{formatDate(comment.createdAt)}</p>
                                       {user && (
-                                        <button
-                                          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                          className='text-blue-600 hover:text-blue-700 font-medium'
-                                        >
-                                          Répondre
-                                        </button>
+                                        <>
+                                          <button
+                                            onClick={() => handleLikeComment(post.id, comment.id)}
+                                            className='text-gray-600 hover:text-red-600 font-medium flex items-center gap-1 transition-colors'
+                                          >
+                                            <Heart className={`w-3 h-3 ${commentLikes[`${post.id}_${comment.id}`] ? 'fill-red-600 text-red-600' : ''}`} />
+                                            {commentLikes[`${post.id}_${comment.id}_count`] || comment.likes || 0}
+                                          </button>
+                                          <button
+                                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                            className='text-blue-600 hover:text-blue-700 font-medium'
+                                          >
+                                            Répondre
+                                          </button>
+                                        </>
                                       )}
                                     </div>
                                   </>
@@ -769,7 +825,18 @@ function Feed() {
                                       ) : (
                                         <>
                                           <p className='text-xs text-gray-800 mt-1'>{reply.text}</p>
-                                          <p className='text-xs text-gray-500 mt-1'>{formatDate(reply.createdAt)}</p>
+                                          <div className='flex space-x-2 mt-1 text-xs'>
+                                            <p className='text-gray-500'>{formatDate(reply.createdAt)}</p>
+                                            {user && (
+                                              <button
+                                                onClick={() => handleLikeComment(post.id, reply.id)}
+                                                className='text-gray-600 hover:text-red-600 font-medium flex items-center gap-1 transition-colors'
+                                              >
+                                                <Heart className={`w-3 h-3 ${commentLikes[`${post.id}_${reply.id}`] ? 'fill-red-600 text-red-600' : ''}`} />
+                                                {commentLikes[`${post.id}_${reply.id}_count`] || reply.likes || 0}
+                                              </button>
+                                            )}
+                                          </div>
                                         </>
                                       )}
                                     </div>

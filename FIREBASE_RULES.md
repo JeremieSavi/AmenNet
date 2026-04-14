@@ -65,12 +65,26 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.authorId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid;
       
+      // LIKES - Sous-collection des likes du post
+      match /likes/{userId} {
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
+      
       // COMMENTS - Sous-collection des commentaires
       match /comments/{commentId} {
         allow read: if isAuthenticated();
         allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
         allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
         allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+        
+        // COMMENT LIKES - Sous-collection des likes d'un commentaire
+        match /likes/{userId} {
+          allow read: if isAuthenticated();
+          allow create: if isAuthenticated() && request.auth.uid == userId;
+          allow delete: if isAuthenticated() && request.auth.uid == userId;
+        }
       }
     }
     

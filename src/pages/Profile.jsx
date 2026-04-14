@@ -14,6 +14,7 @@ function Profile() {
   const [loading, setLoading] = useState(false)
   const [userPosts, setUserPosts] = useState([])
   const [faithCompanions, setFaithCompanions] = useState([])
+  const [followersCount, setFollowersCount] = useState(0)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followingLoading, setFollowingLoading] = useState(false)
   const [profileUserId, setProfileUserId] = useState(null)
@@ -107,6 +108,22 @@ function Profile() {
       setIsOwnProfile(true)
     }
   }, [user, profileUserId])
+
+  // Compter les personnes qui suivent ce profil
+  useEffect(() => {
+    if (!profileUserId) return
+
+    const companionsGroupQuery = query(
+      collectionGroup(db, 'faithCompanions'),
+      where('__name__', '==', profileUserId)
+    )
+
+    const unsub = onSnapshot(companionsGroupQuery, (snapshot) => {
+      setFollowersCount(snapshot.size)
+    })
+
+    return () => unsub()
+  }, [profileUserId])
 
   // Ajouter/Retirer un compagnon de foi
   const handleFollowToggle = async () => {
@@ -482,12 +499,12 @@ function Profile() {
             <p className='text-gray-600 font-medium'>Publications</p>
           </div>
           <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
-            <p className='text-3xl font-bold text-blue-600 mb-2'>0</p>
-            <p className='text-gray-600 font-medium'>Abonnés</p>
+            <p className='text-3xl font-bold text-blue-600 mb-2'>{faithCompanions.length}</p>
+            <p className='text-gray-600 font-medium'>Compagnons de Foi</p>
           </div>
           <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
-            <p className='text-3xl font-bold text-green-600 mb-2'>0</p>
-            <p className='text-gray-600 font-medium'>Abonnements</p>
+            <p className='text-3xl font-bold text-green-600 mb-2'>{followersCount}</p>
+            <p className='text-gray-600 font-medium'>Suivi par</p>
           </div>
         </div>
 
