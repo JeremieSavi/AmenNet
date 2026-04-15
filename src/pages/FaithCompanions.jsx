@@ -15,6 +15,7 @@ function FaithCompanions() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState('discover') // 'discover' ou 'requests'
   const [incomingRequests, setIncomingRequests] = useState([])
+  const [incomingRequestsIds, setIncomingRequestsIds] = useState(new Set()) // IDs des demandeurs
   const [outgoingRequests, setOutgoingRequests] = useState(new Set())
   const [myCompanions, setMyCompanions] = useState(new Set())
   const [loading, setLoading] = useState(true)
@@ -42,7 +43,7 @@ function FaithCompanions() {
     return () => unsub()
   }, [navigate])
 
-  // Récupérer tous les utilisateurs
+  // Récupérer tous les utilisateurs FIDÈLES uniquement (excluant les églises)
   useEffect(() => {
     if (!user) return
 
@@ -50,13 +51,14 @@ function FaithCompanions() {
     const unsub = onSnapshot(usersQuery, async (snapshot) => {
       const usersData = snapshot.docs
         .filter(doc => doc.id !== user.uid) // Exclure l'utilisateur actuel
+        .filter(doc => doc.data().accountType === 'Fidèle') // Afficher SEULEMENT les fidèles
         .map(doc => ({
           id: doc.id,
           ...doc.data()
         }))
         .sort((a, b) => {
-          const nameA = a.accountType === 'Église' ? a.egliseName : `${a.prenom} ${a.nom}`
-          const nameB = b.accountType === 'Église' ? b.egliseName : `${b.prenom} ${b.nom}`
+          const nameA = `${a.prenom} ${a.nom}`
+          const nameB = `${b.prenom} ${b.nom}`
           return nameA.localeCompare(nameB)
         })
 
@@ -66,7 +68,7 @@ function FaithCompanions() {
     return () => unsub()
   }, [user])
 
-  // Récupérer les demandes reçues
+  // Récupérer les demandes reçues (SEULEMENT des fidèles, jamais des églises)
   useEffect(() => {
     if (!user) return
 
@@ -79,11 +81,18 @@ function FaithCompanions() {
         requestIds.map(async (uid) => {
           const userRef = doc(db, 'users', uid)
           const userSnap = await getDoc(userRef)
-          return userSnap.exists() ? { id: uid, ...userSnap.data() } : null
+          // IMPORTANT: Ne garder que les demandes venant de fidèles
+          if (userSnap.exists() && userSnap.data().accountType === 'Fidèle') {
+            return { id: uid, ...userSnap.data() }
+          }
+          return null
         })
       )
       
-      setIncomingRequests(requestsData.filter(r => r !== null))
+      const validRequests = requestsData.filter(r => r !== null)
+      setIncomingRequests(validRequests)
+      // Aussi tracker les IDs pour vérification rapide
+      setIncomingRequestsIds(new Set(validRequests.map(r => r.id)))
     })
     return () => unsub()
   }, [user])
@@ -130,6 +139,12 @@ function FaithCompanions() {
   const handleSendRequest = async (targetUserId) => {
     if (!user || !userData) return
 
+    // Validation: L'utilisateur doit être un fidèle pour envoyer une demande
+    if (userData.accountType !== 'Fidèle') {
+      alert('❌ Seuls les fidèles peuvent envoyer des demandes de compagnonsship')
+      return
+    }
+
     setRequestsLoading(prev => ({ ...prev, [targetUserId]: true }))
     try {
       // Ajouter à mes demandes envoyées
@@ -174,6 +189,16 @@ function FaithCompanions() {
   // Accepter une demande
   const handleAcceptRequest = async (senderId) => {
     if (!user || !userData) return
+
+    // Validation: Vérifier que le demandeur est un fidèle
+    const senderRef = doc(db, 'users', senderId)
+    const senderSnap = await getDoc(senderRef)
+    if (!senderSnap.exists() || senderSnap.data().accountType !== 'Fidèle') {
+      alert('❌ Erreur: Seuls les fidèles peuvent être compagnons de foi')
+      // Rejeter automatiquement
+      await handleRejectRequest(senderId)
+      return
+    }
 
     setRequestsLoading(prev => ({ ...prev, [senderId]: true }))
     try {
@@ -237,6 +262,8 @@ function FaithCompanions() {
   const getButtonState = (userId) => {
     if (myCompanions.has(userId)) return 'companion'
     if (outgoingRequests.has(userId)) return 'pending'
+    // ❌ BLOQUÉ: Si l'autre a déjà envoyé une demande, ne pas pouvoir en envoyer
+    if (incomingRequestsIds.has(userId)) return 'received'
     return 'none'
   }
 
@@ -247,7 +274,26 @@ function FaithCompanions() {
   return (
     <div className='bg-gray-50 min-h-screen pb-24'>
       <div className='max-w-4xl mx-auto p-4 space-y-6'>
-        {/* En-tête */}
+        {/* Message si l'utilisateur est une église */}
+        {userData?.accountType === 'Église' && (
+          <div className='bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg'>
+            <h2 className='font-bold text-blue-900 mb-2'>ℹ️ Les Églises n'utilisent pas ce système</h2>
+            <p className='text-blue-800 text-sm'>
+              Les compagnons de foi sont réservés aux fidèles. Les fidèles vous suivent via la page "Suivre cette église" sur votre profil.
+            </p>
+          </div>
+        )}
+
+        {/* Afficher le contenu seulement si l'utilisateur est un fidèle */}
+        {userData?.accountType === 'Église' ? (
+          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'>
+            <Users className='w-12 h-12 text-gray-300 mx-auto mb-4' />
+            <p className='text-gray-600 font-medium'>Accès réservé aux fidèles</p>
+            <p className='text-sm text-gray-500 mt-1'>Cette page est réservée aux comptes fidèles pour gérer leurs compagnons de foi</p>
+          </div>
+        ) : (
+          <>
+            {/* En-tête */}
         <div className='bg-linear-to-r from-[#F97316] via-orange-500 to-orange-400 rounded-xl shadow-lg p-6 text-white'>
           <div className='flex items-center justify-between'>
             <div className='flex items-center space-x-3'>
@@ -396,6 +442,14 @@ function FaithCompanions() {
                               <Clock className='w-4 h-4' />
                               <span>Demande en attente</span>
                             </button>
+                          ) : buttonState === 'received' ? (
+                            <button
+                              disabled
+                              className='w-full flex items-center justify-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg font-semibold text-sm'
+                            >
+                              <Clock className='w-4 h-4' />
+                              <span>Demande reçue</span>
+                            </button>
                           ) : (
                             <button
                               onClick={() => handleSendRequest(u.id)}
@@ -498,6 +552,8 @@ function FaithCompanions() {
               <p className='text-gray-600 text-sm font-medium'>Compagnons</p>
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

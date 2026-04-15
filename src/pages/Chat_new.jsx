@@ -22,7 +22,6 @@ import {
 } from 'lucide-react'
 import { createNewMessageNotification } from '../services/notificationsService'
 
-
 function Chat() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -193,7 +192,7 @@ function Chat() {
   }
 
   // Démarrer une nouvelle conversation
-  const handleStartChat = (companion) => {
+  const handleStartChat = async (companion) => {
     const convId = [user.uid, companion.id].sort().join('_')
     const existingConv = conversations.find(c => c.id === convId)
     

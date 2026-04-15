@@ -34,8 +34,11 @@ export const createOpportunity = async (data, user, userData) => {
       authorAccountType: userData?.accountType || 'Fidèle',
       authorEgliseName: userData?.egliseName || null,
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
       views: 0,
-      saves: 0
+      saves: 0,
+      likes: 0,
+      questions: 0
     }
 
     return await addDoc(collection(db, 'opportunities'), opportunityData)
@@ -148,6 +151,40 @@ export const getSavedOpportunities = async (userId) => {
 }
 
 /**
+ * Écouter les opportunités sauvegardées en temps réel
+ */
+export const listenSavedOpportunities = (userId, callback) => {
+  try {
+    const q = query(
+      collection(db, 'savedOpportunities'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    )
+    
+    return onSnapshot(q, async (snapshot) => {
+      const savedOps = await Promise.all(
+        snapshot.docs.map(async (savedDoc) => {
+          const opRef = doc(db, 'opportunities', savedDoc.data().opportunityId)
+          const opSnap = await getDoc(opRef)
+          return opSnap.exists() 
+            ? { 
+                id: savedDoc.data().opportunityId, 
+                ...opSnap.data(),
+                savedAt: savedDoc.data().createdAt
+              } 
+            : null
+        })
+      )
+      
+      callback(savedOps.filter(op => op !== null))
+    })
+  } catch (error) {
+    console.error('Erreur écoute opportunités sauvegardées:', error)
+    return () => {}
+  }
+}
+
+/**
  * Incrémenter les vues d'une opportunité
  */
 export const incrementOpportunityViews = async (opportunityId) => {
@@ -157,5 +194,27 @@ export const incrementOpportunityViews = async (opportunityId) => {
     })
   } catch (error) {
     console.error('Erreur incrément vues:', error)
+  }
+}
+
+/**
+ * Mettre à jour une opportunité
+ */
+export const updateOpportunity = async (opportunityId, data) => {
+  try {
+    const updateData = {
+      title: data.title,
+      description: data.description,
+      type: data.type,
+      location: data.location,
+      link: data.link || null,
+      deadline: data.deadline || null,
+      updatedAt: serverTimestamp()
+    }
+
+    await updateDoc(doc(db, 'opportunities', opportunityId), updateData)
+  } catch (error) {
+    console.error('Erreur mise à jour opportunité:', error)
+    throw error
   }
 }

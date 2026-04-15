@@ -3,7 +3,8 @@ import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { doc, getDoc, updateDoc, collection, query, where, onSnapshot, orderBy, setDoc, deleteDoc, getDocs, collectionGroup, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { useNavigate, useParams } from 'react-router-dom'
-import { LogOut, Edit2, Save, X, Mail, Briefcase, MapPin, User, Building2, CheckCircle2, UserPlus, UserCheck, Users, Church } from 'lucide-react'
+import { LogOut, Edit2, Save, X, Mail, Briefcase, MapPin, User, Building2, CheckCircle2, UserPlus, UserCheck, Users, Church, Bookmark } from 'lucide-react'
+import { listenSavedOpportunities } from '../services/opportunitiesService'
 
 function Profile() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ function Profile() {
   const [loading, setLoading] = useState(false)
   const [userPosts, setUserPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
+  const [savedOpportunities, setSavedOpportunities] = useState([])
   const [faithCompanions, setFaithCompanions] = useState([])
   const [incomingRequests, setIncomingRequests] = useState([])
   const [isFollowing, setIsFollowing] = useState(false)
@@ -162,6 +164,16 @@ function Profile() {
           })
         )
         setSavedPosts(savedPostsData.filter(p => p !== null))
+      })
+      return () => unsub()
+    }
+  }, [user, isOwnProfile])
+
+  // Charger les opportunités sauvegardées (seulement pour son propre profil)
+  useEffect(() => {
+    if (user && isOwnProfile) {
+      const unsub = listenSavedOpportunities(user.uid, (opportunities) => {
+        setSavedOpportunities(opportunities)
       })
       return () => unsub()
     }
@@ -733,33 +745,90 @@ function Profile() {
           )}
         </div>
 
-        {/* Publications sauvegardées */}
+        {/* Publications et Opportunités sauvegardées */}
         {isOwnProfile && (
           <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
-            <h2 className='text-2xl font-bold text-gray-900 mb-4'>Publications sauvegardées</h2>
-            {savedPosts.length === 0 ? (
-              <p className='text-gray-500 text-center py-8'>Aucune publication sauvegardée pour le moment</p>
+            <div className='flex items-center space-x-2 mb-4'>
+              <Bookmark className='w-6 h-6 text-[#F97316]' />
+              <h2 className='text-2xl font-bold text-gray-900'>Éléments sauvegardés</h2>
+              <span className='ml-auto bg-[#F97316] text-white px-3 py-1 rounded-full text-sm font-semibold'>
+                {savedPosts.length + savedOpportunities.length}
+              </span>
+            </div>
+
+            {savedPosts.length === 0 && savedOpportunities.length === 0 ? (
+              <p className='text-gray-500 text-center py-8'>Aucun élément sauvegardé pour le moment</p>
             ) : (
               <div className='space-y-4'>
-                {savedPosts.map((post) => (
-                  <div key={post.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition'>
-                    <div className='flex items-start justify-between'>
-                      <div className='flex-1'>
-                        <p className='text-gray-800 line-clamp-2 mb-2'>{post.content}</p>
-                        <div className='flex items-center justify-between text-xs text-gray-500'>
-                          <span>Par: <span className='font-medium text-gray-700'>{getPostAuthorName(post)}</span></span>
-                          <span>{formatDate(post.createdAt)}</span>
+                {/* Publications sauvegardées */}
+                {savedPosts.length > 0 && (
+                  <div>
+                    <h3 className='text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2'>
+                      💬 Publications ({savedPosts.length})
+                    </h3>
+                    <div className='space-y-3'>
+                      {savedPosts.map((post) => (
+                        <div key={post.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition bg-gray-50'>
+                          <div className='flex items-start justify-between'>
+                            <div className='flex-1'>
+                              <p className='text-gray-800 line-clamp-2 mb-2'>{post.content}</p>
+                              <div className='flex items-center justify-between text-xs text-gray-500'>
+                                <span>Par: <span className='font-medium text-gray-700'>{getPostAuthorName(post)}</span></span>
+                                <span>{formatDate(post.createdAt)}</span>
+                              </div>
+                            </div>
+                            <div className='ml-4 text-right text-xs'>
+                              <div className='space-x-2'>
+                                <span>❤️ {post.likes || 0}</span>
+                                <span>💬 {post.comments || 0}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                      <div className='ml-4 text-right text-xs'>
-                        <div className='space-x-2'>
-                          <span>❤️ {post.likes || 0}</span>
-                          <span>💬 {post.comments || 0}</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
+
+                {/* Opportunités sauvegardées */}
+                {savedOpportunities.length > 0 && (
+                  <div>
+                    <h3 className='text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2'>
+                      🎯 Opportunités ({savedOpportunities.length})
+                    </h3>
+                    <div className='space-y-3'>
+                      {savedOpportunities.map((opportunity) => (
+                        <div key={opportunity.id} className='border border-orange-200 rounded-lg p-4 hover:shadow-md transition bg-orange-50'>
+                          <div className='flex items-start justify-between'>
+                            <div className='flex-1'>
+                              <p className='font-semibold text-gray-900 mb-1'>{opportunity.title}</p>
+                              <p className='text-gray-700 line-clamp-2 text-sm mb-2'>{opportunity.description}</p>
+                              <div className='flex flex-wrap gap-2 mb-2'>
+                                <span className='inline-block px-2 py-1 bg-[#F97316] text-white text-xs rounded font-medium'>
+                                  {opportunity.type}
+                                </span>
+                                {opportunity.location && (
+                                  <span className='inline-block px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded'>
+                                    📍 {opportunity.location}
+                                  </span>
+                                )}
+                              </div>
+                              <div className='flex items-center justify-between text-xs text-gray-600'>
+                                <span>Par: <span className='font-medium text-gray-900'>{opportunity.authorName || 'Utilisateur'}</span></span>
+                                <span>{formatDate(opportunity.createdAt)}</span>
+                              </div>
+                            </div>
+                            <div className='ml-4 text-right text-xs text-gray-600'>
+                              <div className='space-x-2'>
+                                <span>❤️ {opportunity.likes || 0}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
