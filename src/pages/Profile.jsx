@@ -464,25 +464,25 @@ function Profile() {
                     ) : (
                       <>
                         {/* Si le profil visité est une église */}
-                        {postAuthors || userData?.accountType === 'Église' ? (
+                        {userData?.accountType === 'Église' ? (
                           <button
                             onClick={handleChurchFollowToggle}
                             disabled={churchFollowingLoading}
                             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
                               isFollowingThisChurch
-                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300'
                                 : 'bg-[#F97316] text-white hover:bg-orange-600'
                             } disabled:opacity-50`}
                           >
                             {isFollowingThisChurch ? (
                               <>
                                 <Church className='w-4 h-4' />
-                                <span>Église suivie</span>
+                                <span>Vous suivez ✓</span>
                               </>
                             ) : (
                               <>
                                 <Church className='w-4 h-4' />
-                                <span>Suivre cette église</span>
+                                <span>Suivre</span>
                               </>
                             )}
                           </button>
@@ -493,19 +493,19 @@ function Profile() {
                             disabled={followingLoading}
                             className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
                               isFollowing
-                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
                                 : 'bg-[#F97316] text-white hover:bg-orange-600'
                             } disabled:opacity-50`}
                           >
                             {isFollowing ? (
                               <>
                                 <UserCheck className='w-4 h-4' />
-                                <span>Compagnon suivi</span>
+                                <span>Compagnon ✓</span>
                               </>
                             ) : (
                               <>
                                 <UserPlus className='w-4 h-4' />
-                                <span>Ajouter comme compagnon</span>
+                                <span>Ajouter</span>
                               </>
                             )}
                           </button>
@@ -658,69 +658,90 @@ function Profile() {
             <p className='text-3xl font-bold text-[#F97316] mb-2'>{userPosts.length}</p>
             <p className='text-gray-600 font-medium'>Publications</p>
           </div>
-          <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
-            <p className='text-3xl font-bold text-blue-600 mb-2'>{faithCompanions.length}</p>
-            <p className='text-gray-600 font-medium'>Compagnons de foi</p>
-          </div>
-          <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
-            <p className='text-3xl font-bold text-green-600 mb-2'>
-              {isOwnProfile ? incomingRequests.length : (isFollowing ? '✓' : '—')}
-            </p>
-            <p className='text-gray-600 font-medium'>
-              {isOwnProfile ? 'Demandes en attente' : (isFollowing ? 'Compagnon suivi' : 'Non compagnon')}
-            </p>
-          </div>
-        </div>
-
-        {/* Compagnons de Foi */}
-        <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
-          <div className='flex items-center space-x-2 mb-4'>
-            <Users className='w-6 h-6 text-[#F97316]' />
-            <h2 className='text-2xl font-bold text-gray-900'>Compagnons de Foi</h2>
-            <span className='ml-auto bg-[#F97316] text-white px-3 py-1 rounded-full text-sm font-semibold'>
-              {faithCompanions.length}
-            </span>
-          </div>
-          {faithCompanions.length === 0 ? (
-            <p className='text-gray-500 text-center py-8'>
-              {isOwnProfile ? 'Aucun compagnon de foi pour le moment' : 'Cet utilisateur n\'a pas encore de compagnons'}
-            </p>
+          {userData?.accountType === 'Église' ? (
+            <>
+              <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
+                <p className='text-3xl font-bold text-purple-600 mb-2'>{followingChurches.length || 0}</p>
+                <p className='text-gray-600 font-medium text-sm'>Abonnés</p>
+              </div>
+              <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
+                <p className='text-3xl font-bold text-green-600 mb-2'>
+                  {isOwnProfile ? incomingRequests.length : '—'}
+                </p>
+                <p className='text-gray-600 font-medium text-sm'>
+                  {isOwnProfile ? 'Demandes' : 'Section'}
+                </p>
+              </div>
+            </>
           ) : (
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-              {faithCompanions.map((companion) => (
-                <div key={companion.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition'>
-                  <div className='flex items-center space-x-3'>
-                    <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
-                      {companion.accountType === 'Église' 
-                        ? companion.egliseName?.charAt(0)
-                        : (companion.prenom?.charAt(0) + companion.nom?.charAt(0)).toUpperCase()
-                      }
-                    </div>
-                    <div className='flex-1 min-w-0'>
-                      <p className='font-semibold text-gray-900 truncate'>
-                        {companion.accountType === 'Église' ? companion.egliseName : `${companion.prenom} ${companion.nom}`}
-                      </p>
-                      {companion.accountType === 'Église' ? (
-                        <p className='text-xs text-gray-500 flex items-center gap-1'>
-                          <Building2 className='w-3 h-3' />
-                          {companion.egliseAdresse}
-                        </p>
-                      ) : (
-                        <p className='text-xs text-gray-500 flex items-center gap-1'>
-                          <Briefcase className='w-3 h-3' />
-                          {companion.profession}
-                        </p>
-                      )}
-                    </div>
-                    {companion.certified && companion.accountType === 'Église' && (
-                      <CheckCircle2 className='w-5 h-5 text-blue-600 flex-shrink-0' />
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <>
+              <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
+                <p className='text-3xl font-bold text-blue-600 mb-2'>{faithCompanions.length}</p>
+                <p className='text-gray-600 font-medium text-sm'>Compagnons</p>
+              </div>
+              <div className='bg-white rounded-xl shadow-sm p-6 border border-gray-200 text-center hover:shadow-md transition'>
+                <p className='text-3xl font-bold text-purple-600 mb-2'>{isOwnProfile ? followingChurches.length : '—'}</p>
+                <p className='text-gray-600 font-medium text-sm'>Églises</p>
+              </div>
+            </>
           )}
         </div>
+
+        {/* Compagnons de Foi - Seulement pour les fidèles */}
+        {userData?.accountType !== 'Église' && (
+          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
+            <div className='flex items-center space-x-2 mb-4'>
+              <Users className='w-6 h-6 text-[#F97316]' />
+              <h2 className='text-2xl font-bold text-gray-900'>Compagnons de Foi</h2>
+              <span className='ml-auto bg-[#F97316] text-white px-3 py-1 rounded-full text-sm font-semibold'>
+                {faithCompanions.length}
+              </span>
+            </div>
+            {faithCompanions.length === 0 ? (
+              <p className='text-gray-500 text-center py-8'>
+                {isOwnProfile ? 'Aucun compagnon de foi pour le moment' : 'Cet utilisateur n\'a pas encore de compagnons'}
+              </p>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                {faithCompanions.map((companion) => (
+                  <div key={companion.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition'>
+                    <div className='flex items-center space-x-3'>
+                      <button
+                        onClick={() => navigate(`/profile/${companion.id}`)}
+                        className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 hover:shadow-lg transition-shadow cursor-pointer'
+                        title='Voir le profil'
+                      >
+                        {companion.accountType === 'Église' 
+                          ? companion.egliseName?.charAt(0)
+                          : (companion.prenom?.charAt(0) + companion.nom?.charAt(0)).toUpperCase()
+                        }
+                      </button>
+                      <div className='flex-1 min-w-0'>
+                        <p className='font-semibold text-gray-900 truncate'>
+                          {companion.accountType === 'Église' ? companion.egliseName : `${companion.prenom} ${companion.nom}`}
+                        </p>
+                        {companion.accountType === 'Église' ? (
+                          <p className='text-xs text-gray-500 flex items-center gap-1'>
+                            <Building2 className='w-3 h-3' />
+                            {companion.egliseAdresse}
+                          </p>
+                        ) : (
+                          <p className='text-xs text-gray-500 flex items-center gap-1'>
+                            <Briefcase className='w-3 h-3' />
+                            {companion.profession}
+                          </p>
+                        )}
+                      </div>
+                      {companion.certified && companion.accountType === 'Église' && (
+                        <CheckCircle2 className='w-5 h-5 text-blue-600 flex-shrink-0' />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Mes publications */}
         <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
@@ -834,33 +855,33 @@ function Profile() {
           </div>
         )}
 
-        {/* Églises suivies */}
-        {isOwnProfile && (
+        {/* Églises suivies - Pour les fidèles */}
+        {isOwnProfile && userData?.accountType !== 'Église' && (
           <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
             <div className='flex items-center space-x-2 mb-4'>
-              <Church className='w-6 h-6 text-[#F97316]' />
-              <h2 className='text-2xl font-bold text-gray-900'>Églises suivies</h2>
-              <span className='ml-auto bg-[#F97316] text-white px-3 py-1 rounded-full text-sm font-semibold'>
+              <Church className='w-6 h-6 text-purple-600' />
+              <h2 className='text-2xl font-bold text-gray-900'>Églises que je suis</h2>
+              <span className='ml-auto bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold'>
                 {followingChurches.length}
               </span>
             </div>
             {followingChurches.length === 0 ? (
               <p className='text-gray-500 text-center py-8'>
-                Vous ne suivez pas encore d'églises. Suivez une église pour recevoir leurs publications et annonces
+                Vous ne suivez pas encore d'églises. Cherchez et suivez une église pour recevoir leurs publications et annonces 📍
               </p>
             ) : (
               <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                 {followingChurches.map((church) => (
-                  <div key={church.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer' onClick={() => navigate(`/profile/${church.id}`)}>
+                  <div key={church.id} className='border border-purple-200 rounded-lg p-4 hover:shadow-md transition bg-purple-50 cursor-pointer' onClick={() => navigate(`/profile/${church.id}`)}>
                     <div className='flex items-center space-x-3'>
-                      <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
+                      <div className='w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                         {church.egliseName?.charAt(0)}
                       </div>
                       <div className='flex-1 min-w-0'>
                         <p className='font-semibold text-gray-900 truncate'>
                           {church.egliseName}
                         </p>
-                        <p className='text-xs text-gray-500 flex items-center gap-1'>
+                        <p className='text-xs text-gray-600 flex items-center gap-1'>
                           <MapPin className='w-3 h-3' />
                           {church.egliseAdresse}
                         </p>
@@ -868,6 +889,59 @@ function Profile() {
                       {church.certified && (
                         <CheckCircle2 className='w-5 h-5 text-blue-600 flex-shrink-0' />
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Mes abonnés - Pour les églises */}
+        {isOwnProfile && userData?.accountType === 'Église' && (
+          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
+            <div className='flex items-center space-x-2 mb-4'>
+              <Users className='w-6 h-6 text-purple-600' />
+              <h2 className='text-2xl font-bold text-gray-900'>Mes abonnés</h2>
+              <span className='ml-auto bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-semibold'>
+                {followingChurches.length}
+              </span>
+            </div>
+            {followingChurches.length === 0 ? (
+              <p className='text-gray-500 text-center py-8'>
+                Vous n'avez pas encore d'abonnés. Partagez du contenu intéressant pour attirer les fidèles! 🙏
+              </p>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                {followingChurches.map((follower) => (
+                  <div key={follower.id} className='border border-purple-200 rounded-lg p-4 hover:shadow-md transition bg-purple-50'>
+                    <div className='flex items-center space-x-3'>
+                      <button
+                        onClick={() => navigate(`/profile/${follower.id}`)}
+                        className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 hover:shadow-lg transition-shadow cursor-pointer'
+                        title='Voir le profil'
+                      >
+                        {follower.accountType === 'Église' 
+                          ? follower.egliseName?.charAt(0)
+                          : (follower.prenom?.charAt(0) + follower.nom?.charAt(0)).toUpperCase()
+                        }
+                      </button>
+                      <div className='flex-1 min-w-0'>
+                        <p className='font-semibold text-gray-900 truncate'>
+                          {follower.accountType === 'Église' ? follower.egliseName : `${follower.prenom} ${follower.nom}`}
+                        </p>
+                        {follower.accountType === 'Église' ? (
+                          <p className='text-xs text-gray-500 flex items-center gap-1'>
+                            <Building2 className='w-3 h-3' />
+                            Église
+                          </p>
+                        ) : (
+                          <p className='text-xs text-gray-500 flex items-center gap-1'>
+                            <MapPin className='w-3 h-3' />
+                            {follower.quatier || 'Fidèle'}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}

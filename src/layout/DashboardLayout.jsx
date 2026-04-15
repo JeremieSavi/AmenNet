@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { doc, getDoc, collection, onSnapshot, query, where } from 'firebase/firestore'
 import { User, Home, Briefcase, LogOut, Users, Bell, MessageCircle } from 'lucide-react'
 
 function DashboardLayout() {
+  const navigate = useNavigate()
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
   const [showMenu, setShowMenu] = useState(false)
@@ -60,6 +61,12 @@ function DashboardLayout() {
     return user?.email?.charAt(0)?.toUpperCase()
   }
 
+  const handleAvatarClick = () => {
+    if (user) {
+      navigate(`/profile/${user.uid}`)
+    }
+  }
+
   return (
     <div className='flex flex-col min-h-screen'>
       {/* En-tête */}
@@ -68,37 +75,12 @@ function DashboardLayout() {
           <h1 className='text-2xl font-bold text-[#F97316]'>AmenNet</h1>
           <div className='relative'>
             <button
-              onClick={() => setShowMenu(!showMenu)}
-              className='w-10 h-10 rounded-full bg-linear-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold hover:shadow-lg transition-shadow'
+              onClick={handleAvatarClick}
+              title='Voir mon profil'
+              className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold hover:shadow-lg transition-shadow cursor-pointer'
             >
               {getInitials()}
             </button>
-            {showMenu && (
-              <div className='absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50'>
-                <div className='p-4 border-b border-gray-100'>
-                  <p className='font-semibold text-gray-900'>
-                    {userData?.prenom} {userData?.nom}
-                  </p>
-                  <p className='text-xs text-gray-500'>{user?.email}</p>
-                </div>
-                <nav className='space-y-1 p-2'>
-                  <NavLink
-                    to='/dashboardLayout/profile'
-                    onClick={() => setShowMenu(false)}
-                    className={({ isActive }) =>
-                      `flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-[#F97316] text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
-                      }`
-                    }
-                  >
-                    <User className='w-4 h-4' />
-                    <span>Mon Profil</span>
-                  </NavLink>
-                </nav>
-              </div>
-            )}
           </div>
         </div>
       </header>
