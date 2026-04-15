@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
-import { doc, getDoc, updateDoc, collection, query, where, onSnapshot, orderBy, setDoc, deleteDoc, getDocs, collectionGroup } from 'firebase/firestore'
+import { doc, getDoc, updateDoc, collection, query, where, onSnapshot, orderBy, setDoc, deleteDoc, getDocs, collectionGroup, arrayUnion, arrayRemove } from 'firebase/firestore'
 import { useNavigate, useParams } from 'react-router-dom'
-import { LogOut, Edit2, Save, X, Mail, Briefcase, MapPin, User, Building2, CheckCircle2, UserPlus, UserCheck, Users } from 'lucide-react'
+import { LogOut, Edit2, Save, X, Mail, Briefcase, MapPin, User, Building2, CheckCircle2, UserPlus, UserCheck, Users, Church } from 'lucide-react'
 
 function Profile() {
   const navigate = useNavigate()
@@ -20,6 +20,9 @@ function Profile() {
   const [followingLoading, setFollowingLoading] = useState(false)
   const [profileUserId, setProfileUserId] = useState(null)
   const [isOwnProfile, setIsOwnProfile] = useState(true)
+  const [followingChurches, setFollowingChurches] = useState([])
+  const [isFollowingThisChurch, setIsFollowingThisChurch] = useState(false)
+  const [churchFollowingLoading, setChurchFollowingLoading] = useState(false)
   const [formData, setFormData] = useState({
     prenom: '',
     nom: '',
@@ -164,6 +167,48 @@ function Profile() {
     }
   }, [user, isOwnProfile])
 
+  // Charger les églises suivies (seulement pour son propre profil)
+  useEffect(() => {
+    if (user && isOwnProfile) {
+      const userRef = doc(db, 'users', user.uid)
+      const unsub = onSnapshot(userRef, async (snapshot) => {
+        if (snapshot.exists()) {
+          const churchIds = snapshot.data()?.followingChurches || []
+          
+          // Récupérer les données de chaque église
+          const churchesData = await Promise.all(
+            churchIds.map(async (churchId) => {
+              try {
+                const churchRef = doc(db, 'users', churchId)
+                const churchSnap = await getDoc(churchRef)
+                return churchSnap.exists() ? { id: churchId, ...churchSnap.data() } : null
+              } catch (error) {
+                console.error('Erreur chargement église:', error)
+                return null
+              }
+            })
+          )
+          
+          setFollowingChurches(churchesData.filter(c => c !== null))
+        }
+      })
+      return () => unsub()
+    }
+  }, [user, isOwnProfile])
+
+  // Vérifier si on suit cette église (pour le profil d'une église)
+  useEffect(() => {
+    if (user && profileUserId && !isOwnProfile) {
+      const currentUserRef = doc(db, 'users', user.uid)
+      getDoc(currentUserRef).then(snapshot => {
+        if (snapshot.exists()) {
+          const followingChurches = snapshot.data()?.followingChurches || []
+          setIsFollowingThisChurch(followingChurches.includes(profileUserId))
+        }
+      })
+    }
+  }, [user, profileUserId, isOwnProfile])
+
   // Ajouter/Retirer un compagnon de foi
   const handleFollowToggle = async () => {
     if (!user || !profileUserId) return
@@ -185,6 +230,33 @@ function Profile() {
       alert('⛔ Erreur lors de la mise à jour')
     } finally {
       setFollowingLoading(false)
+    }
+  }
+
+  // Suivre/Ne plus suivre une église
+  const handleChurchFollowToggle = async () => {
+    if (!user || !profileUserId) return
+    
+    setChurchFollowingLoading(true)
+    try {
+      const userRef = doc(db, 'users', user.uid)
+      if (isFollowingThisChurch) {
+        // Ne plus suivre cette église
+        await updateDoc(userRef, {
+          followingChurches: arrayRemove(profileUserId)
+        })
+      } else {
+        // Suivre cette église
+        await updateDoc(userRef, {
+          followingChurches: arrayUnion(profileUserId)
+        })
+      }
+      setIsFollowingThisChurch(!isFollowingThisChurch)
+    } catch (error) {
+      console.error("Erreur:", error)
+      alert('⛔ Erreur lors de la mise à jour')
+    } finally {
+      setChurchFollowingLoading(false)
     }
   }
 
@@ -378,27 +450,55 @@ function Profile() {
                         <span>Modifier</span>
                       </button>
                     ) : (
-                      <button
-                        onClick={handleFollowToggle}
-                        disabled={followingLoading}
-                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
-                          isFollowing
-                            ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            : 'bg-[#F97316] text-white hover:bg-orange-600'
-                        } disabled:opacity-50`}
-                      >
-                        {isFollowing ? (
-                          <>
-                            <UserCheck className='w-4 h-4' />
-                            <span>Compagnon suivi</span>
-                          </>
+                      <>
+                        {/* Si le profil visité est une église */}
+                        {postAuthors || userData?.accountType === 'Église' ? (
+                          <button
+                            onClick={handleChurchFollowToggle}
+                            disabled={churchFollowingLoading}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
+                              isFollowingThisChurch
+                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                : 'bg-[#F97316] text-white hover:bg-orange-600'
+                            } disabled:opacity-50`}
+                          >
+                            {isFollowingThisChurch ? (
+                              <>
+                                <Church className='w-4 h-4' />
+                                <span>Église suivie</span>
+                              </>
+                            ) : (
+                              <>
+                                <Church className='w-4 h-4' />
+                                <span>Suivre cette église</span>
+                              </>
+                            )}
+                          </button>
                         ) : (
-                          <>
-                            <UserPlus className='w-4 h-4' />
-                            <span>Ajouter comme compagnon</span>
-                          </>
+                          /* Sinon c'est un fidèle */
+                          <button
+                            onClick={handleFollowToggle}
+                            disabled={followingLoading}
+                            className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors font-semibold ${
+                              isFollowing
+                                ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                                : 'bg-[#F97316] text-white hover:bg-orange-600'
+                            } disabled:opacity-50`}
+                          >
+                            {isFollowing ? (
+                              <>
+                                <UserCheck className='w-4 h-4' />
+                                <span>Compagnon suivi</span>
+                              </>
+                            ) : (
+                              <>
+                                <UserPlus className='w-4 h-4' />
+                                <span>Ajouter comme compagnon</span>
+                              </>
+                            )}
+                          </button>
                         )}
-                      </button>
+                      </>
                     )}
                   </>
                 ) : (
@@ -657,6 +757,48 @@ function Profile() {
                           <span>💬 {post.comments || 0}</span>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Églises suivies */}
+        {isOwnProfile && (
+          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6'>
+            <div className='flex items-center space-x-2 mb-4'>
+              <Church className='w-6 h-6 text-[#F97316]' />
+              <h2 className='text-2xl font-bold text-gray-900'>Églises suivies</h2>
+              <span className='ml-auto bg-[#F97316] text-white px-3 py-1 rounded-full text-sm font-semibold'>
+                {followingChurches.length}
+              </span>
+            </div>
+            {followingChurches.length === 0 ? (
+              <p className='text-gray-500 text-center py-8'>
+                Vous ne suivez pas encore d'églises. Suivez une église pour recevoir leurs publications et annonces
+              </p>
+            ) : (
+              <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                {followingChurches.map((church) => (
+                  <div key={church.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition cursor-pointer' onClick={() => navigate(`/profile/${church.id}`)}>
+                    <div className='flex items-center space-x-3'>
+                      <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
+                        {church.egliseName?.charAt(0)}
+                      </div>
+                      <div className='flex-1 min-w-0'>
+                        <p className='font-semibold text-gray-900 truncate'>
+                          {church.egliseName}
+                        </p>
+                        <p className='text-xs text-gray-500 flex items-center gap-1'>
+                          <MapPin className='w-3 h-3' />
+                          {church.egliseAdresse}
+                        </p>
+                      </div>
+                      {church.certified && (
+                        <CheckCircle2 className='w-5 h-5 text-blue-600 flex-shrink-0' />
+                      )}
                     </div>
                   </div>
                 ))}

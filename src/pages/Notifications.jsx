@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore'
-import { Bell, Trash2, CheckCircle2, MessageCircle, Users, Heart, MessageSquare } from 'lucide-react'
+import { Bell, Trash2, CheckCircle2, MessageCircle, Users, Heart, MessageSquare, Church } from 'lucide-react'
 
 function Notifications() {
   const [user, setUser] = useState(null)
@@ -88,6 +88,8 @@ function Notifications() {
         return <Heart className='w-5 h-5 text-red-600' />
       case 'post_commented':
         return <MessageSquare className='w-5 h-5 text-purple-600' />
+      case 'church_published':
+        return <Church className='w-5 h-5 text-amber-600' />
       default:
         return <Bell className='w-5 h-5 text-gray-600' />
     }
@@ -106,6 +108,8 @@ function Notifications() {
         return 'bg-red-50 border-red-200'
       case 'post_commented':
         return 'bg-purple-50 border-purple-200'
+      case 'church_published':
+        return 'bg-amber-50 border-amber-200'
       default:
         return 'bg-gray-50 border-gray-200'
     }

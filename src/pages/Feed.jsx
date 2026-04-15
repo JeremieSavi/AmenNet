@@ -175,13 +175,15 @@ function Feed() {
         const postRef = doc(db, 'posts', editingPostId)
         await updateDoc(postRef, {
           content: postContent,
+          category: postCategory,
           updatedAt: serverTimestamp()
         })
         alert('✅ Post modifié avec succès')
         setEditingPostId(null)
       } else {
-        await addDoc(collection(db, 'posts'), {
+        const newPost = await addDoc(collection(db, 'posts'), {
           content: postContent,
+          category: postCategory,
           authorId: user.uid,
           authorName: user.displayName || user.email,
           authorAccountType: userData?.accountType || 'Fidèle',
@@ -192,9 +194,34 @@ function Feed() {
           comments: 0,
           shares: 0
         })
+        
+        // Si c'est une église, envoyer une notification à tous les followers
+        if (userData?.accountType === 'Église') {
+          try {
+            const followersQuery = query(
+              collection(db, 'users'),
+              where('followingChurches', 'array-contains', user.uid)
+            )
+            const followersSnapshots = await getDocs(followersQuery)
+            
+            for (const followerDoc of followersSnapshots.docs) {
+              await createChurchPublishedNotification(
+                followerDoc.id,
+                user.uid,
+                userData.egliseName,
+                postContent,
+                postCategory
+              )
+            }
+          } catch (error) {
+            console.error('Erreur envoi notifications:', error)
+          }
+        }
+        
         alert('✅ Post publié avec succès')
       }
       setPostContent('')
+      setPostCategory('spirituel')
       setShowCreatePost(false)
     } catch (error) {
       console.error("Erreur:", error)
@@ -454,6 +481,16 @@ function Feed() {
     return comment?.userName || 'Utilisateur'
   }
 
+  const getCategoryInfo = (category) => {
+    const categories = {
+      spirituel: { emoji: '✨', label: 'Spirituel', color: 'bg-blue-50 text-blue-700 border-blue-200' },
+      temoignages: { emoji: '💝', label: 'Témoignage', color: 'bg-purple-50 text-purple-700 border-purple-200' },
+      evenements: { emoji: '📅', label: 'Événement', color: 'bg-green-50 text-green-700 border-green-200' },
+      opportunites: { emoji: '💼', label: 'Opportunité', color: 'bg-orange-50 text-orange-700 border-orange-200' }
+    }
+    return categories[category] || categories.spirituel
+  }
+
   const getAuthorFullName = (post) => {
     // Utiliser d'abord les données stockées dans le post
     if (post?.authorAccountType === 'Église' && post?.authorEgliseName) {
@@ -514,12 +551,28 @@ function Feed() {
                     rows={5}
                     className='w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 resize-none font-medium'
                   />
+                  
+                  {/* Sélecteur de catégorie */}
+                  {userData?.accountType === 'Église' && (
+                    <select
+                      value={postCategory}
+                      onChange={(e) => setPostCategory(e.target.value)}
+                      className='w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 font-medium'
+                    >
+                      <option value='spirituel'>✨ Spirituel</option>
+                      <option value='temoignages'>💝 Témoignages</option>
+                      <option value='evenements'>📅 Événements</option>
+                      <option value='opportunites'>💼 Opportunités</option>
+                    </select>
+                  )}
+                  
                   <div className='flex space-x-2 justify-end'>
                     <button
                       type='button'
                       onClick={() => {
                         setShowCreatePost(false)
                         setPostContent('')
+                        setPostCategory('spirituel')
                         setEditingPostId(null)
                       }}
                       className='px-6 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold transition-colors'
@@ -565,6 +618,11 @@ function Feed() {
                           <CheckCircle2 className='w-4 h-4 text-blue-600' />
                           <span className='text-xs font-semibold text-blue-600'>Certifiée</span>
                         </div>
+                      )}
+                      {post.category && (
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getCategoryInfo(post.category).color}`}>
+                          {getCategoryInfo(post.category).emoji} {getCategoryInfo(post.category).label}
+                        </span>
                       )}
                     </div>
                     <p className='text-xs text-gray-500'>
