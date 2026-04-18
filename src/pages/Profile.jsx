@@ -80,19 +80,22 @@ function Profile() {
     return () => unsub()
   }, [navigate])
 
-  // Charger les compagnons de foi
+  // Charger les compagnons de foi (seulement les Fidèles)
   useEffect(() => {
     if (user && profileUserId) {
       const companionsRef = collection(db, 'users', profileUserId, 'faithCompanions')
       const unsubCompanions = onSnapshot(companionsRef, async (snapshot) => {
         const companionIds = snapshot.docs.map(doc => doc.id)
         
-        // Récupérer les données de chaque compagnon
+        // Récupérer les données de chaque compagnon et filtrer pour ne garder que les Fidèles
         const companionsData = await Promise.all(
           companionIds.map(async (uid) => {
             const userRef = doc(db, 'users', uid)
             const userSnap = await getDoc(userRef)
-            return userSnap.exists() ? { id: uid, ...userSnap.data() } : null
+            // Ne garder que les Fidèles (pas les Églises)
+            return userSnap.exists() && userSnap.data().accountType === 'Fidèle'
+              ? { id: uid, ...userSnap.data() }
+              : null
           })
         )
         
@@ -706,35 +709,18 @@ function Profile() {
                 {faithCompanions.map((companion) => (
                   <div key={companion.id} className='border border-gray-200 rounded-lg p-4 hover:shadow-md transition'>
                     <div className='flex items-center space-x-3'>
-                      <button
-                        onClick={() => navigate(`/profile/${companion.id}`)}
-                        className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 hover:shadow-lg transition-shadow cursor-pointer'
-                        title='Voir le profil'
-                      >
-                        {companion.accountType === 'Église' 
-                          ? companion.egliseName?.charAt(0)
-                          : (companion.prenom?.charAt(0) + companion.nom?.charAt(0)).toUpperCase()
-                        }
-                      </button>
+                      <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
+                        {(companion.prenom?.charAt(0) + companion.nom?.charAt(0)).toUpperCase()}
+                      </div>
                       <div className='flex-1 min-w-0'>
                         <p className='font-semibold text-gray-900 truncate'>
-                          {companion.accountType === 'Église' ? companion.egliseName : `${companion.prenom} ${companion.nom}`}
+                          {`${companion.prenom} ${companion.nom}`}
                         </p>
-                        {companion.accountType === 'Église' ? (
-                          <p className='text-xs text-gray-500 flex items-center gap-1'>
-                            <Building2 className='w-3 h-3' />
-                            {companion.egliseAdresse}
-                          </p>
-                        ) : (
-                          <p className='text-xs text-gray-500 flex items-center gap-1'>
-                            <Briefcase className='w-3 h-3' />
-                            {companion.profession}
-                          </p>
-                        )}
+                        <p className='text-xs text-gray-500 flex items-center gap-1'>
+                          <Briefcase className='w-3 h-3' />
+                          {companion.profession || 'Fidèle'}
+                        </p>
                       </div>
-                      {companion.certified && companion.accountType === 'Église' && (
-                        <CheckCircle2 className='w-5 h-5 text-blue-600 flex-shrink-0' />
-                      )}
                     </div>
                   </div>
                 ))}
@@ -916,16 +902,12 @@ function Profile() {
                 {followingChurches.map((follower) => (
                   <div key={follower.id} className='border border-purple-200 rounded-lg p-4 hover:shadow-md transition bg-purple-50'>
                     <div className='flex items-center space-x-3'>
-                      <button
-                        onClick={() => navigate(`/profile/${follower.id}`)}
-                        className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 hover:shadow-lg transition-shadow cursor-pointer'
-                        title='Voir le profil'
-                      >
+                      <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                         {follower.accountType === 'Église' 
                           ? follower.egliseName?.charAt(0)
                           : (follower.prenom?.charAt(0) + follower.nom?.charAt(0)).toUpperCase()
                         }
-                      </button>
+                      </div>
                       <div className='flex-1 min-w-0'>
                         <p className='font-semibold text-gray-900 truncate'>
                           {follower.accountType === 'Église' ? follower.egliseName : `${follower.prenom} ${follower.nom}`}

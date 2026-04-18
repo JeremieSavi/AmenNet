@@ -13,12 +13,13 @@ import {
   orderBy,
   serverTimestamp,
   getDocs,
-  deleteDoc
+  deleteDoc,
+  updateDoc
 } from 'firebase/firestore'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
-  Send, Search, Trash2, ArrowLeft, Plus, Phone, Video, Info, X, EyeOff, Eye,
-  Smile, Paperclip, MoreVertical, MessageCircle
+  Send, Search, Trash2, ArrowLeft, Plus, Phone, Video, Info, X, 
+  Smile, Paperclip, MoreVertical, MessageCircle, Edit2, Check
 } from 'lucide-react'
 import { createNewMessageNotification } from '../services/notificationsService'
 
@@ -39,6 +40,9 @@ function Chat() {
   const [showNewChat, setShowNewChat] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768)
+  const [editingMessageId, setEditingMessageId] = useState(null)
+  const [editingText, setEditingText] = useState('')
+  const [menuOpenId, setMenuOpenId] = useState(null)
 
   // Récupérer l'utilisateur actuel
   useEffect(() => {
@@ -171,7 +175,8 @@ function Chat() {
         text: newMessage,
         senderId: user.uid,
         senderName: userData.accountType === 'Église' ? userData.egliseName : `${userData.prenom} ${userData.nom}`,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        isEdited: false
       })
 
       const companion = selectedConversation.companion
@@ -192,7 +197,37 @@ function Chat() {
     }
   }
 
-  // Démarrer une nouvelle conversation
+  // Modifier un message
+  const handleEditMessage = async (messageId, newText) => {
+    if (!newText.trim() || !selectedConversation) return
+
+    try {
+      const msgRef = doc(db, 'conversations', selectedConversation.id, 'messages', messageId)
+      await updateDoc(msgRef, {
+        text: newText,
+        isEdited: true,
+        editedAt: serverTimestamp()
+      })
+      setEditingMessageId(null)
+      setEditingText('')
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('⛔ Erreur lors de la modification du message')
+    }
+  }
+
+  // Supprimer un message
+  const handleDeleteMessage = async (messageId) => {
+    if (!window.confirm('Supprimer ce message?')) return
+
+    try {
+      const msgRef = doc(db, 'conversations', selectedConversation.id, 'messages', messageId)
+      await deleteDoc(msgRef)
+    } catch (error) {
+      console.error('Erreur:', error)
+      alert('⛔ Erreur lors de la suppression')
+    }
+  }
   const handleStartChat = (companion) => {
     const convId = [user.uid, companion.id].sort().join('_')
     const existingConv = conversations.find(c => c.id === convId)
@@ -328,16 +363,9 @@ function Chat() {
                         whileHover={{ backgroundColor: '#f3f4f6' }}
                         className='w-full flex items-center gap-3 p-2 rounded-lg transition-colors'
                       >
-                        <motion.div 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/profile/${companion.id}`)
-                          }}
-                          className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer hover:shadow-lg transition-shadow'
-                          title='Voir le profil'
-                        >
+                        <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                           {getInitials(companion)}
-                        </motion.div>
+                        </div>
                         <div className='flex-1 text-left'>
                           <p className='font-semibold text-sm text-gray-900'>
                             {getCompanionName(companion)}
@@ -376,17 +404,9 @@ function Chat() {
                         : 'hover:bg-gray-100'
                     }`}
                   >
-                    <motion.div 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/profile/${conv.companion.id}`)
-                      }}
-                      className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer hover:shadow-lg transition-shadow'
-                      title='Voir le profil'
-                      whileHover={{ scale: 1.1 }}
-                    >
+                    <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                       {getInitials(conv.companion)}
-                    </motion.div>
+                    </div>
                     
                     <div className='flex-1 min-w-0'>
                       <p className='font-semibold text-sm line-clamp-1'>
@@ -434,7 +454,7 @@ function Chat() {
           className='flex-1 flex flex-col'
         >
           {/* Header du chat */}
-          <div className='bg-white border-b border-gray-200 p-4 flex items-center justify-between'>
+          <div className='flex-shrink-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between'>
             <div className='flex items-center gap-3'>
               {isMobileView && (
                 <motion.button
@@ -446,12 +466,7 @@ function Chat() {
                 </motion.button>
               )}
               
-              <motion.div 
-                onClick={() => navigate(`/profile/${selectedConversation.companion.id}`)}
-                className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:shadow-lg transition-shadow'
-                title='Voir le profil'
-                whileHover={{ scale: 1.1 }}
-              >
+              <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm'>
                 {getInitials(selectedConversation.companion)}
               </div>
               
@@ -496,27 +511,105 @@ function Chat() {
                 <p className='text-gray-600 font-medium'>Commencez la conversation!</p>
               </div>
             ) : (
-              messages.map((msg, idx) => {
+              messages.map((msg) => {
                 const isOwn = msg.senderId === user?.uid
                 return (
                   <motion.div
                     key={msg.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
+                    onMouseEnter={() => setMenuOpenId(isOwn ? msg.id : null)}
+                    onMouseLeave={() => setMenuOpenId(null)}
                   >
-                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative ${
                       isOwn
                         ? 'bg-[#F97316] text-white rounded-br-none'
                         : 'bg-gray-200 text-gray-900 rounded-bl-none'
                     }`}>
-                      <p className='text-sm'>{msg.text}</p>
-                      <p className={`text-xs mt-1 ${isOwn ? 'text-orange-100' : 'text-gray-600'}`}>
-                        {new Date(msg.createdAt?.toDate?.() || msg.createdAt).toLocaleTimeString('fr-FR', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
+                      {/* Edit Mode */}
+                      {editingMessageId === msg.id ? (
+                        <div className='space-y-2'>
+                          <input
+                            type='text'
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className='w-full px-2 py-1 rounded bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                            autoFocus
+                          />
+                          <div className='flex gap-2'>
+                            <motion.button
+                              onClick={() => handleEditMessage(msg.id, editingText)}
+                              whileHover={{ scale: 1.05 }}
+                              className='flex-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium flex items-center justify-center gap-1'
+                            >
+                              <Check className='w-3 h-3' /> Valider
+                            </motion.button>
+                            <motion.button
+                              onClick={() => setEditingMessageId(null)}
+                              whileHover={{ scale: 1.05 }}
+                              className='flex-1 px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-medium'
+                            >
+                              Annuler
+                            </motion.button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className='text-sm'>{msg.text}</p>
+                          <div className='flex items-center justify-between mt-1 gap-2'>
+                            <div className={`text-xs ${isOwn ? 'text-orange-100' : 'text-gray-600'}`}>
+                              {msg.isEdited && (
+                                <span className='italic'>(modifié) </span>
+                              )}
+                              {new Date(msg.createdAt?.toDate?.() || msg.createdAt).toLocaleTimeString('fr-FR', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                              {msg.editedAt && (
+                                <span className='block text-xs'>
+                                  {new Date(msg.editedAt?.toDate?.() || msg.editedAt).toLocaleTimeString('fr-FR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Menu boutons */}
+                      <AnimatePresence>
+                        {isOwn && menuOpenId === msg.id && editingMessageId !== msg.id && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            className='absolute -left-16 top-0 flex gap-2 bg-white rounded-lg shadow-lg p-2'
+                          >
+                            <motion.button
+                              onClick={() => {
+                                setEditingMessageId(msg.id)
+                                setEditingText(msg.text)
+                              }}
+                              whileHover={{ scale: 1.1 }}
+                              className='p-1.5 hover:bg-gray-100 rounded text-[#F97316]'
+                              title='Modifier'
+                            >
+                              <Edit2 className='w-4 h-4' />
+                            </motion.button>
+                            <motion.button
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              whileHover={{ scale: 1.1 }}
+                              className='p-1.5 hover:bg-gray-100 rounded text-red-600'
+                              title='Supprimer'
+                            >
+                              <Trash2 className='w-4 h-4' />
+                            </motion.button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </motion.div>
                 )
@@ -525,7 +618,7 @@ function Chat() {
           </div>
 
           {/* Input Area */}
-          <div className='bg-white border-t border-gray-200 p-4'>
+          <div className='flex-shrink-0 bg-white border-t border-gray-200 p-4'>
             <form onSubmit={handleSendMessage} className='flex gap-2'>
               <motion.button
                 whileHover={{ scale: 1.05 }}

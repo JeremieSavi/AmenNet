@@ -26,6 +26,7 @@ function Feed() {
   const [editingCommentId, setEditingCommentId] = useState(null)
   const [editingCommentText, setEditingCommentText] = useState({})
   const [editingCommentLoading, setEditingCommentLoading] = useState(false)
+  const [commentLikes, setCommentLikes] = useState({})
 
   // Récupérer l'utilisateur actuel
   useEffect(() => {
@@ -107,12 +108,19 @@ function Feed() {
             ...prev,
             [post.id]: comments
           }))
+
+          // Charger les likes pour chaque commentaire
+          if (user) {
+            comments.forEach(comment => {
+              checkCommentLike(post.id, comment.id)
+            })
+          }
         })
 
         return () => unsub()
       }
     })
-  }, [expandedComments, posts])
+  }, [expandedComments, posts, user])
 
   // Charger les likes et saved posts
   useEffect(() => {
@@ -443,6 +451,50 @@ function Feed() {
   const handleCancelCommentEdit = () => {
     setEditingCommentId(null)
     setEditingCommentText({})
+  }
+
+  const handleCommentLike = async (postId, commentId) => {
+    if (!user) return
+    try {
+      const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
+      const commentRef = doc(db, 'posts', postId, 'comments', commentId)
+      const likeSnap = await getDoc(likeRef)
+
+      if (likeSnap.exists()) {
+        // Unlike
+        await deleteDoc(likeRef)
+        await updateDoc(commentRef, { likes: increment(-1) })
+      } else {
+        // Like
+        await setDoc(likeRef, { createdAt: serverTimestamp() })
+        await updateDoc(commentRef, { likes: increment(1) })
+      }
+      
+      // Mettre à jour l'état local
+      const key = `${postId}_${commentId}`
+      setCommentLikes(prev => ({
+        ...prev,
+        [key]: !prev[key]
+      }))
+    } catch (error) {
+      console.error("Erreur like commentaire:", error)
+    }
+  }
+
+  const checkCommentLike = async (postId, commentId) => {
+    if (user) {
+      try {
+        const likeRef = doc(db, 'posts', postId, 'comments', commentId, 'likes', user.uid)
+        const likeSnap = await getDoc(likeRef)
+        const key = `${postId}_${commentId}`
+        setCommentLikes(prev => ({
+          ...prev,
+          [key]: likeSnap.exists()
+        }))
+      } catch (error) {
+        console.error("Erreur check like commentaire:", error)
+      }
+    }
   }
 
   const getReplies = (comments, parentCommentId) => {
@@ -791,12 +843,24 @@ function Feed() {
                                     <div className='flex space-x-2 mt-2 text-xs'>
                                       <p className='text-gray-500'>{formatDate(comment.createdAt)}</p>
                                       {user && (
-                                        <button
-                                          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
-                                          className='text-blue-600 hover:text-blue-700 font-medium'
-                                        >
-                                          Répondre
-                                        </button>
+                                        <>
+                                          <button
+                                            onClick={() => handleCommentLike(post.id, comment.id)}
+                                            className={`font-medium transition-colors ${
+                                              commentLikes[`${post.id}_${comment.id}`]
+                                                ? 'text-red-600 hover:text-red-700'
+                                                : 'text-gray-500 hover:text-red-600'
+                                            }`}
+                                          >
+                                            ❤️ {comment.likes || 0}
+                                          </button>
+                                          <button
+                                            onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                                            className='text-blue-600 hover:text-blue-700 font-medium'
+                                          >
+                                            Répondre
+                                          </button>
+                                        </>
                                       )}
                                     </div>
                                   </>

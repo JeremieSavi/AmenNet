@@ -127,3 +127,31 @@ export const createChurchPublishedNotification = async (recipientUserId, churchI
     console.error('Erreur création notification:', error)
   }
 }
+
+/**
+ * Créer une notification quand une opportunité est publiée
+ */
+export const createOpportunityPublishedNotification = async (recipientUserId, opportunityId, authorName, opportunityTitle, opportunityType) => {
+  try {
+    const typeEmoji = {
+      'Freelance': '💻',
+      'Stage': '🎓',
+      'Emploi': '💼',
+      'Bénévolat': '🤝'
+    }[opportunityType] || '🎯'
+    
+    const notificationRef = doc(collection(db, 'users', recipientUserId, 'notifications'))
+    await setDoc(notificationRef, {
+      type: 'opportunity_published',
+      title: `${typeEmoji} Nouvelle opportunité de ${authorName}`,
+      message: opportunityTitle.substring(0, 80) + (opportunityTitle.length > 80 ? '...' : ''),
+      fromUserName: authorName,
+      opportunityId: opportunityId,
+      opportunityType: opportunityType,
+      read: false,
+      createdAt: serverTimestamp()
+    })
+  } catch (error) {
+    console.error('Erreur création notification opportunité:', error)
+  }
+}

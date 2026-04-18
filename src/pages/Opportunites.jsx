@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
 import { 
   Briefcase, MapPin, Calendar, Clock, ExternalLink, Plus, Search, X, Trash2, Bookmark,
@@ -28,6 +28,7 @@ import {
   updateOpportunityQuestion,
   toggleQuestionLike
 } from '../services/opportunitiesQuestionsService'
+import { createOpportunityPublishedNotification } from '../services/notificationsService'
 
 function Opportunites() {
   const navigate = useNavigate()
@@ -47,6 +48,7 @@ function Opportunites() {
   const [opportunityLikes, setOpportunityLikes] = useState({})
   const [questionAnswers, setQuestionAnswers] = useState('')
   const [expandedQuestionsOppId, setExpandedQuestionsOppId] = useState(null)
+  const [questionsCount, setQuestionsCount] = useState({})
 
   // Form states
   const [formData, setFormData] = useState({
@@ -140,6 +142,24 @@ function Opportunites() {
     }
   }, [expandedQuestionsOppId])
 
+  // Charger le nombre de questions pour toutes les opportunités
+  useEffect(() => {
+    if (opportunities.length === 0) return
+
+    const unsubscribers = []
+    opportunities.forEach(opp => {
+      const unsub = listenOpportunityQuestions(opp.id, (questions) => {
+        setQuestionsCount(prev => ({
+          ...prev,
+          [opp.id]: questions.length
+        }))
+      })
+      unsubscribers.push(unsub)
+    })
+
+    return () => unsubscribers.forEach(unsub => unsub())
+  }, [opportunities])
+
   // Filtrer les opportunités
   useEffect(() => {
     let filtered = opportunities
@@ -177,8 +197,28 @@ function Opportunites() {
         alert('✅ Opportunité mise à jour!')
         setEditingOppId(null)
       } else {
-        // Créer
-        await createOpportunity(formData, user, userData)
+        // Créer et notifier
+        const newOpp = await createOpportunity(formData, user, userData)
+        
+        // Notifier les compagnons du créateur
+        try {
+          const companionsRef = collection(db, 'users', user.uid, 'faithCompanions')
+          const companionsDocs = await getDocs(companionsRef)
+          
+          for (const companionDoc of companionsDocs.docs) {
+            const companionId = companionDoc.id
+            await createOpportunityPublishedNotification(
+              companionId,
+              newOpp.id,
+              userData?.accountType === 'Église' ? userData.egliseName : `${userData?.prenom} ${userData?.nom}`,
+              formData.title,
+              formData.type
+            )
+          }
+        } catch (notificationError) {
+          console.error('Erreur lors de l\'envoi des notifications:', notificationError)
+        }
+        
         alert('✅ Opportunité créée!')
       }
       setFormData({
@@ -647,7 +687,7 @@ function Opportunites() {
                       className='flex items-center space-x-1 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-semibold transition-colors'
                     >
                       <MessageCircle className='w-4 h-4' />
-                      <span>{(opportunityQuestions[opp.id] || []).length}</span>
+                      <span>{questionsCount[opp.id] || 0}</span>
                     </motion.button>
 
                     <motion.button

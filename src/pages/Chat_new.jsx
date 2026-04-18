@@ -327,16 +327,9 @@ function Chat() {
                         whileHover={{ backgroundColor: '#f3f4f6' }}
                         className='w-full flex items-center gap-3 p-2 rounded-lg transition-colors'
                       >
-                        <motion.div 
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/profile/${companion.id}`)
-                          }}
-                          className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer hover:shadow-lg transition-shadow'
-                          title='Voir le profil'
-                        >
+                        <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                           {getInitials(companion)}
-                        </motion.div>
+                        </div>
                         <div className='flex-1 text-left'>
                           <p className='font-semibold text-sm text-gray-900'>
                             {getCompanionName(companion)}
@@ -375,17 +368,9 @@ function Chat() {
                         : 'hover:bg-gray-100'
                     }`}
                   >
-                    <motion.div 
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/profile/${conv.companion.id}`)
-                      }}
-                      className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0 cursor-pointer hover:shadow-lg transition-shadow'
-                      title='Voir le profil'
-                      whileHover={{ scale: 1.1 }}
-                    >
+                    <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
                       {getInitials(conv.companion)}
-                    </motion.div>
+                    </div>
                     
                     <div className='flex-1 min-w-0'>
                       <p className='font-semibold text-sm line-clamp-1'>
@@ -445,17 +430,9 @@ function Chat() {
                 </motion.button>
               )}
               
-              <motion.div 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  navigate(`/profile/${selectedConversation.companion.id}`)
-                }}
-                className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm cursor-pointer hover:shadow-lg transition-shadow'
-                title='Voir le profil'
-                whileHover={{ scale: 1.1 }}
-              >
+              <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm'>
                 {getInitials(selectedConversation.companion)}
-              </motion.div>
+              </div>
               
               <div>
                 <h2 className='font-bold text-gray-900'>
