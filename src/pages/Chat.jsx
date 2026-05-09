@@ -40,6 +40,13 @@ function Chat() {
 
   const reactions = ['👍', '❤️', '😂', '😢', '😡', '🔥', '✨', '🎉']
 
+  // RESPONSIVE MOBILE VIEW
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 768)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   // AUTO RESIZE TEXTAREA
   const handleInputChange = (e) => {
     setNewMessage(e.target.value)
