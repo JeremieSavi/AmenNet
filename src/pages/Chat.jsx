@@ -211,7 +211,10 @@ function Chat() {
 
       {/* CONVERSATIONS LIST */}
       {(!isMobileView || !selectedConversation) && (
-        <div className={`w-full md:w-96 border-r flex flex-col ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+        <motion.div 
+          initial={{ x: isMobileView && selectedConversation ? -400 : 0 }}
+          animate={{ x: 0 }}
+          className={`${isMobileView ? 'w-full' : 'w-96'} border-r flex flex-col ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
           
           {/* HEADER */}
           <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
@@ -255,16 +258,20 @@ function Chat() {
             )}
           </div>
         </div>
+        </motion.div>
       )}
 
       {/* CHAT AREA */}
-      {selectedConversation ? (
-        <div className="flex-1 flex flex-col min-h-0">
+      {selectedConversation && (
+        <motion.div 
+          initial={{ x: isMobileView ? 400 : 0 }}
+          animate={{ x: 0 }}
+          className={`${isMobileView ? 'w-full' : 'flex-1'} flex flex-col min-h-0`}>
 
           {/* HEADER */}
           <div className={`p-4 border-b flex-shrink-0 flex items-center gap-3 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
             {isMobileView && (
-              <button onClick={() => setIsMobileView(true)} className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+              <button onClick={() => setSelectedConversation(null)} className={isDark ? 'text-gray-300 hover:text-orange-400' : 'text-gray-600 hover:text-orange-500'} title="Retour">
                 <ArrowLeft size={20} />
               </button>
             )}
@@ -486,7 +493,7 @@ function Chat() {
 
             </div>
           </form>
-        </div>
+        </motion.div>
       ) : (
         <div className="flex-1 flex items-center justify-center">
           <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Sélectionnez une conversation</p>
