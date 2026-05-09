@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
@@ -11,10 +11,14 @@ import {
   setDoc,
   orderBy,
   serverTimestamp,
-  where
+  where,
+  updateDoc,
+  deleteDoc,
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
-import { Send, MessageCircle, Search, ArrowLeft } from 'lucide-react'
+import { Send, MessageCircle, Search, ArrowLeft, Edit2, Trash2, Check, X, Eye, Smile, Plus, Mic } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 
 function Chat() {
@@ -27,6 +31,28 @@ function Chat() {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768)
+  const [editingId, setEditingId] = useState(null)
+  const [editingText, setEditingText] = useState('')
+  const [showReactions, setShowReactions] = useState(null)
+
+  const messagesEndRef = useRef(null)
+  const textareaRef = useRef(null)
+
+  const reactions = ['👍', '❤️', '😂', '😢', '😡', '🔥', '✨', '🎉']
+
+  // AUTO RESIZE TEXTAREA
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value)
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px'
+    }
+  }
+
+  // AUTO SCROLL TO BOTTOM
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   // AUTH
   useEffect(() => {
@@ -84,11 +110,87 @@ function Chat() {
       {
         text: newMessage,
         senderId: user.uid,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        isRead: false,
+        readAt: null,
+        isEdited: false,
+        reactions: {}
       }
     )
 
     setNewMessage('')
+  }
+
+  const handleMarkAsRead = async (msgId) => {
+    if (!selectedConversation) return
+    await updateDoc(
+      doc(db, 'conversations', selectedConversation.id, 'messages', msgId),
+      {
+        isRead: true,
+        readAt: serverTimestamp()
+      }
+    )
+  }
+
+  const handleEditMessage = async (msgId) => {
+    if (!selectedConversation || !editingText.trim()) return
+    await updateDoc(
+      doc(db, 'conversations', selectedConversation.id, 'messages', msgId),
+      {
+        text: editingText,
+        isEdited: true
+      }
+    )
+    setEditingId(null)
+    setEditingText('')
+  }
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!selectedConversation) return
+    await deleteDoc(
+      doc(db, 'conversations', selectedConversation.id, 'messages', msgId)
+    )
+  }
+
+  const handleAddReaction = async (msgId, emoji) => {
+    if (!selectedConversation) return
+    const msgRef = doc(db, 'conversations', selectedConversation.id, 'messages', msgId)
+    const msg = messages.find(m => m.id === msgId)
+    
+    if (msg?.reactions?.[emoji]?.includes(user.uid)) {
+      await updateDoc(msgRef, {
+        [`reactions.${emoji}`]: arrayRemove(user.uid)
+      })
+    } else {
+      await updateDoc(msgRef, {
+        [`reactions.${emoji}`]: arrayUnion(user.uid)
+      })
+    }
+    setShowReactions(null)
+  }
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp.toDate ? timestamp.toDate() : timestamp)
+    return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return ''
+    const date = new Date(timestamp.toDate ? timestamp.toDate() : timestamp)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+
+    if (date.toDateString() === today.toDateString()) return 'Aujourd\'hui'
+    if (date.toDateString() === yesterday.toDateString()) return 'Hier'
+    return date.toLocaleDateString('fr-FR')
+  }
+
+  const shouldShowDateSeparator = (currentMsg, prevMsg, index) => {
+    if (index === 0) return true
+    if (!prevMsg) return true
+    return formatDate(currentMsg.createdAt) !== formatDate(prevMsg.createdAt)
   }
 
   const handleSelectConversation = (companion) => {
@@ -98,7 +200,7 @@ function Chat() {
   }
 
   return (
-    <div className={`flex h-screen overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+    <div className={`flex h-[calc(100vh-135px)] overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
 
       {/* CONVERSATIONS LIST */}
       {(!isMobileView || !selectedConversation) && (
@@ -172,40 +274,210 @@ function Chat() {
                 <MessageCircle size={32} />
               </div>
             ) : (
-              messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <div
-                    className={`max-w-xs px-4 py-2 rounded-lg ${
-                      msg.senderId === user?.uid
-                        ? isDark ? 'bg-orange-600' : 'bg-orange-500 text-white'
-                        : isDark ? 'bg-slate-700 text-white' : 'bg-gray-200 text-gray-900'
-                    }`}
-                  >
-                    <p className={msg.senderId === user?.uid ? 'text-white' : isDark ? 'text-white' : 'text-gray-900'}>
-                      {msg.text}
-                    </p>
-                  </div>
-                </motion.div>
-              ))
+              <>
+                {messages.map((msg, index) => {
+                  const prevMsg = index > 0 ? messages[index - 1] : null
+                  const showDate = shouldShowDateSeparator(msg, prevMsg, index)
+
+                  return (
+                    <div key={msg.id}>
+                      {/* DATE SEPARATOR */}
+                      {showDate && (
+                        <div className="flex justify-center my-4">
+                          <span className={`text-xs px-3 py-1 rounded-full ${isDark ? 'bg-slate-700 text-gray-300' : 'bg-gray-200 text-gray-600'}`}>
+                            {formatDate(msg.createdAt)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* MESSAGE */}
+                      <motion.div
+                        className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'} group mb-1`}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        onMouseEnter={() => msg.senderId !== user?.uid && handleMarkAsRead(msg.id)}
+                      >
+                        <div className="flex flex-col gap-1 max-w-sm">
+                          {editingId === msg.id ? (
+                            <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-700' : 'bg-gray-300'}`}>
+                              <textarea
+                                autoFocus
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                className={`w-full px-3 py-2 rounded-lg border-2 ${isDark ? 'bg-slate-600 border-orange-500 text-white' : 'bg-white border-orange-400 text-gray-900'} focus:outline-none`}
+                              />
+                              <div className="flex gap-2 mt-2">
+                                <button
+                                  onClick={() => handleEditMessage(msg.id)}
+                                  className={`p-1.5 rounded ${isDark ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingId(null)
+                                    setEditingText('')
+                                  }}
+                                  className={`p-1.5 rounded ${isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white`}
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div
+                                className={`rounded-2xl px-4 py-2 group/msg relative ${
+                                  msg.senderId === user?.uid
+                                    ? isDark ?'bg-orange-600' : 'bg-orange-500 text-white'
+                                    : isDark ? 'bg-slate-700 text-white' : 'bg-gray-200 text-gray-900'
+                                }`}
+                              >
+                                <p className="break-words">{msg.text}</p>
+                                {msg.isEdited && (
+                                  <p className={`text-xs mt-1 ${msg.senderId === user?.uid ? 'text-orange-100' : isDark ? 'text-gray-300' : 'text-gray-400'}`}>
+                                    (modifié)
+                                  </p>
+                                )}
+
+                                {/* ACTIONS BUTTONS */}
+                                <div className={`absolute ${msg.senderId === user?.uid ? 'right-full mr-2' : 'left-full ml-2'} bottom-0 flex gap-1 opacity-0 group-hover/msg:opacity-100 transition`}>
+                                  {msg.senderId === user?.uid && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setEditingId(msg.id)
+                                          setEditingText(msg.text)
+                                        }}
+                                        className={`p-1.5 rounded-full ${isDark ? 'bg-slate-600 hover:bg-slate-500' : 'bg-gray-300 hover:bg-gray-400'}`}
+                                        title="Modifier"
+                                      >
+                                        <Edit2 size={14} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteMessage(msg.id)}
+                                        className={`p-1.5 rounded-full ${isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-400 hover:bg-red-500'} text-white`}
+                                        title="Supprimer"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </>
+                                  )}
+                                  <div className="relative group/emoji">
+                                    <button
+                                      className={`p-1.5 rounded-full ${isDark ? 'bg-slate-600 hover:bg-slate-500' : 'bg-gray-300 hover:bg-gray-400'}`}
+                                      title="Ajouter une réaction"
+                                    >
+                                      <Smile size={14} />
+                                    </button>
+                                    <div className={`absolute bottom-full mb-2 left-0 hidden group-hover/emoji:flex flex-wrap gap-1 p-2 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-white'} border ${isDark ? 'border-slate-600' : 'border-gray-300'} w-40`}>
+                                      {reactions.map((emoji) => (
+                                        <button
+                                          key={emoji}
+                                          onClick={() => handleAddReaction(msg.id, emoji)}
+                                          className={`text-lg p-1 rounded hover:scale-125 transition ${msg?.reactions?.[emoji]?.includes(user.uid) ? 'bg-orange-500' : ''}`}
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* REACTIONS DISPLAY */}
+                              {msg.reactions && Object.entries(msg.reactions).length > 0 && (
+                                <div className={`flex flex-wrap gap-1 px-2 ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
+                                  {Object.entries(msg.reactions).map(([emoji, users]) => (
+                                    users.length > 0 && (
+                                      <div
+                                        key={emoji}
+                                        className={`text-sm px-2 py-1 rounded-full flex items-center gap-1 ${isDark ? 'bg-slate-700' : 'bg-gray-300'} cursor-pointer hover:scale-110 transition`}
+                                        title={users.length === 1 ? '1 personne' : `${users.length} personnes`}
+                                      >
+                                        <span>{emoji}</span>
+                                        <span className={`text-xs ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>{users.length}</span>
+                                      </div>
+                                    )
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* TIME & READ STATUS */}
+                              <div className={`flex items-center gap-1 text-xs px-2 ${isDark ? 'text-gray-400' : 'text-gray-600'} ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}>
+                                <span>{formatTime(msg.createdAt)}</span>
+                                {msg.senderId === user?.uid && (
+                                  <>
+                                    {msg.isRead ? (
+                                      <>
+                                        <Eye size={12} className="text-blue-500" title={`Vu à ${formatTime(msg.readAt)}`} />
+                                      </>
+                                    ) : (
+                                      <span className="text-gray-500">✓</span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    </div>
+                  )
+                })}
+              </>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* INPUT FORM */}
-          <form onSubmit={handleSendMessage} className={`p-4 flex gap-3 relative -top-20 border-t flex-shrink-0 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
-            <input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Écrivez votre message..."
-              className={`flex-1 px-4 py-2  rounded-lg border-2 font-medium transition ${isDark ? 'bg-slate-700 border-orange-500 text-white placeholder-gray-300 focus:border-orange-600' : 'bg-orange-50 border-orange-400 text-gray-900 placeholder-gray-600 focus:border-orange-600'} focus:outline-none`}
-            />
-            <button type="submit" className={`px-6 py-2 rounded-lg font-bold transition hover:scale-105 ${isDark ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}>
-              <Send size={20} />
-            </button>
+          {/* INPUT FORM - WHATSAPP STYLE */}
+          <form onSubmit={handleSendMessage} className={`p-4 border-t flex-shrink-0 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+            <div className="flex gap-2 items-center">
+              
+              {/* ATTACHMENT BUTTON */}
+              <button
+                type="button"
+                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
+                title="Ajouter une pièce jointe"
+              >
+                <Plus size={24} />
+              </button>
+
+              {/* EMOJI BUTTON */}
+              <button
+                type="button"
+                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
+                title="Ajouter un emoji"
+              >
+                <Smile size={24} />
+              </button>
+
+              {/* TEXT INPUT */}
+              <textarea
+                ref={textareaRef}
+                value={newMessage}
+                onChange={handleInputChange}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSendMessage(e)
+                  }
+                }}
+                placeholder="Votre message..."
+                rows={1}
+                className={`flex-1 px-4 py-2.5 rounded-3xl border-0 font-medium transition resize-none max-h-32 ${isDark ? 'bg-slate-700 text-white placeholder-gray-300 focus:ring-2 focus:ring-orange-500' : 'bg-gray-100 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500'} focus:outline-none`}
+              />
+
+              {/* SEND/MIC BUTTON */}
+              <button
+                type="submit"
+                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${newMessage.trim() ? isDark ? 'text-orange-500 hover:text-orange-400' : 'text-orange-600 hover:text-orange-700' : isDark ? 'text-slate-500 hover:text-slate-400' : 'text-gray-400 hover:text-gray-500'}`}
+                title={newMessage.trim() ? "Envoyer" : "Message vocal"}
+              >
+                {newMessage.trim() ? <Send size={24} /> : <Mic size={24} />}
+              </button>
+
+            </div>
           </form>
         </div>
       ) : (
