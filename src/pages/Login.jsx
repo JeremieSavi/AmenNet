@@ -3,8 +3,10 @@ import React, { useState } from 'react'
 import { auth } from '../services/fiebase';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Heart } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Login() {
+    const { isDark } = useTheme()
     const [formData, setFormData] = useState({
         email: '',
         password: ''
@@ -52,7 +54,7 @@ function Login() {
     }
 
     return (
-        <div className='min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4'>
+        <div className={isDark ? 'min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4' : 'min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4'}>
             {/* Left Side - Branding & Feature */}
             <div className='hidden lg:flex lg:w-1/2 flex-col justify-center items-center pr-12'>
                 <div className='text-center'>
@@ -63,28 +65,28 @@ function Login() {
                     <h1 className='text-7xl font-bold bg-gradient-to-r from-[#F97316] to-orange-500 bg-clip-text text-transparent mb-4'>
                         AmenNet
                     </h1>
-                    <p className='text-2xl text-gray-700 font-semibold mb-12'>
+                    <p className={isDark ? 'text-2xl text-gray-300 font-semibold mb-12' : 'text-2xl text-gray-700 font-semibold mb-12'}>
                         Bienvenue à la Maison
                     </p>
 
                     <div className='space-y-8 max-w-md mx-auto'>
-                        <div className='bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'>
-                            <p className='text-lg text-gray-800 font-semibold mb-2'>Connecté à Votre Foi</p>
-                            <p className='text-gray-600'>Partage tes témoignages et grandit spirituellement avec une communauté bienveillante.</p>
+                        <div className={isDark ? 'bg-slate-700 rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]' : 'bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'}>
+                            <p className={isDark ? 'text-lg text-gray-100 font-semibold mb-2' : 'text-lg text-gray-800 font-semibold mb-2'}>Connecté à Votre Foi</p>
+                            <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Partage tes témoignages et grandit spirituellement avec une communauté bienveillante.</p>
                         </div>
 
-                        <div className='bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'>
-                            <p className='text-lg text-gray-800 font-semibold mb-2'>Découvre Ton Église</p>
-                            <p className='text-gray-600'>Trouve les églises près de toi et connecte-toi avec d'autres fidèles de ta communauté.</p>
+                        <div className={isDark ? 'bg-slate-700 rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]' : 'bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'}>
+                            <p className={isDark ? 'text-lg text-gray-100 font-semibold mb-2' : 'text-lg text-gray-800 font-semibold mb-2'}>Découvre Ton Église</p>
+                            <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Trouve les églises près de toi et connecte-toi avec d'autres fidèles de ta communauté.</p>
                         </div>
 
-                        <div className='bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'>
-                            <p className='text-lg text-gray-800 font-semibold mb-2'>Inspiration Quotidienne</p>
-                            <p className='text-gray-600'>Reçois des versets, des prières et du soutien spirituel pour ta journée.</p>
+                        <div className={isDark ? 'bg-slate-700 rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]' : 'bg-white rounded-xl p-6 shadow-lg border-l-4 border-[#F97316]'}>
+                            <p className={isDark ? 'text-lg text-gray-100 font-semibold mb-2' : 'text-lg text-gray-800 font-semibold mb-2'}>Inspiration Quotidienne</p>
+                            <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Reçois des versets, des prières et du soutien spirituel pour ta journée.</p>
                         </div>
                     </div>
 
-                    <div className='mt-12 text-gray-600 italic'>
+                    <div className={isDark ? 'mt-12 text-gray-400 italic' : 'mt-12 text-gray-600 italic'}>
                         <p>"Celui qui entre par la porte est le berger des brebis" - Jean 10:2</p>
                     </div>
                 </div>
@@ -92,13 +94,13 @@ function Login() {
 
             {/* Right Side - Login Form */}
             <div className='w-full lg:w-1/2 max-w-md'>
-                <div className='bg-white rounded-2xl shadow-2xl p-8 border border-orange-100'>
+                <div className={isDark ? 'bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700' : 'bg-white rounded-2xl shadow-2xl p-8 border border-orange-100'}>
                     <div className='text-center mb-8'>
-                        <div className='inline-block p-4 bg-orange-50 rounded-full mb-4'>
+                        <div className={isDark ? 'inline-block p-4 bg-slate-700 rounded-full mb-4' : 'inline-block p-4 bg-orange-50 rounded-full mb-4'}>
                             <Heart className='w-8 h-8 text-[#F97316]' />
                         </div>
-                        <h2 className='text-3xl font-bold text-gray-900 mb-2'>Connexion</h2>
-                        <p className='text-gray-600'>Bienvenue, connecte-toi à ta communauté</p>
+                        <h2 className={isDark ? 'text-3xl font-bold text-gray-100 mb-2' : 'text-3xl font-bold text-gray-900 mb-2'}>Connexion</h2>
+                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>Bienvenue, connecte-toi à ta communauté</p>
                     </div>
 
                     {error && (
@@ -110,32 +112,32 @@ function Login() {
                     <form onSubmit={handleLogin} className='space-y-6'>
                         {/* Email */}
                         <div>
-                            <label className='block text-sm font-semibold text-gray-700 mb-2'>Adresse Email</label>
+                            <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Adresse Email</label>
                             <div className='relative'>
-                                <Mail className='absolute left-4 top-3.5 w-5 h-5 text-gray-400' />
+                                <Mail className={isDark ? 'absolute left-4 top-3.5 w-5 h-5 text-gray-500' : 'absolute left-4 top-3.5 w-5 h-5 text-gray-400'} />
                                 <input
                                     type="email"
                                     name='email'
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder='vous@exemple.com'
-                                    className='w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                    className={isDark ? 'w-full pl-12 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                 />
                             </div>
                         </div>
 
                         {/* Password */}
                         <div>
-                            <label className='block text-sm font-semibold text-gray-700 mb-2'>Mot de Passe</label>
+                            <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Mot de Passe</label>
                             <div className='relative'>
-                                <Lock className='absolute left-4 top-3.5 w-5 h-5 text-gray-400' />
+                                <Lock className={isDark ? 'absolute left-4 top-3.5 w-5 h-5 text-gray-500' : 'absolute left-4 top-3.5 w-5 h-5 text-gray-400'} />
                                 <input
                                     type="password"
                                     name='password'
                                     value={formData.password}
                                     onChange={handleChange}
                                     placeholder='••••••••'
-                                    className='w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                    className={isDark ? 'w-full pl-12 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                 />
                             </div>
                         </div>
@@ -147,9 +149,9 @@ function Login() {
                                     type='checkbox'
                                     checked={rememberMe}
                                     onChange={(e) => setRememberMe(e.target.checked)}
-                                    className='w-4 h-4 rounded border-gray-300 text-[#F97316] cursor-pointer'
+                                    className={isDark ? 'w-4 h-4 rounded border-slate-600 text-[#F97316] cursor-pointer' : 'w-4 h-4 rounded border-gray-300 text-[#F97316] cursor-pointer'}
                                 />
-                                <span className='text-sm text-gray-700'>Se souvenir de moi</span>
+                                <span className={isDark ? 'text-sm text-gray-300' : 'text-sm text-gray-700'}>Se souvenir de moi</span>
                             </label>
                             <a href='#' className='text-sm text-[#F97316] hover:text-orange-600 font-semibold transition-colors'>
                                 Mot de passe oublié ?
@@ -170,16 +172,16 @@ function Login() {
                     {/* Divider */}
                     <div className='relative my-8'>
                         <div className='absolute inset-0 flex items-center'>
-                            <div className='w-full border-t border-gray-300'></div>
+                            <div className={isDark ? 'w-full border-t border-slate-600' : 'w-full border-t border-gray-300'}></div>
                         </div>
                         <div className='relative flex justify-center text-sm'>
-                            <span className='px-2 bg-white text-gray-500'>Ou</span>
+                            <span className={isDark ? 'px-2 bg-slate-800 text-gray-400' : 'px-2 bg-white text-gray-500'}>Ou</span>
                         </div>
                     </div>
 
                     {/* Signup Link */}
                     <div className='text-center'>
-                        <p className='text-gray-600'>
+                        <p className={isDark ? 'text-gray-300' : 'text-gray-600'}>
                             Pas encore membre ?{' '}
                             <NavLink to='/signin' className='font-bold text-[#F97316] hover:text-orange-600 transition-colors'>
                                 S'inscrire maintenant
@@ -188,8 +190,8 @@ function Login() {
                     </div>
 
                     {/* Info Box */}
-                    <div className='mt-8 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200'>
-                        <p className='text-sm text-gray-700 text-center'>
+                    <div className={isDark ? 'mt-8 p-4 bg-slate-700 rounded-lg border border-slate-600' : 'mt-8 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200'}>
+                        <p className={isDark ? 'text-sm text-gray-300 text-center' : 'text-sm text-gray-700 text-center'}>
                             <span className='font-semibold'>Besoin d'aide ?</span> Contacte notre support community@amennet.com
                         </p>
                     </div>

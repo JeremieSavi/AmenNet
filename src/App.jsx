@@ -14,28 +14,31 @@ import Opportunites from './pages/Opportunites'
 import FaithCompanions from './pages/FaithCompanions'
 import Chat from './pages/Chat'
 import Notifications from './pages/Notifications'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 function App() {
   
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path='/' element={<Landing/>} />
-        <Route path='/signin' element={<Signin/>} />
-        <Route path='/login' element={<Login/>} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path='/' element={<Landing/>} />
+          <Route path='/signin' element={<Signin/>} />
+          <Route path='/login' element={<Login/>} />
 
-        <Route path='/dashboardLayout' element={<DashboardLayout/>} >
-          <Route index element={<Feed/>} />
-          <Route path='opportunites' element={<Opportunites/>} />
-          <Route path='compagnons' element={<FaithCompanions/>} />
-          <Route path='notifications' element={<Notifications/>} />
-          <Route path='chat' element={<Chat/>} />
-          <Route path='profile' element={<Profile/>} />
-          <Route path='profile/:userId' element={<Profile/>} />
-        </Route>
-        
-      </Routes>
-    </BrowserRouter>
+          <Route path='/dashboardLayout' element={<DashboardLayout/>} >
+            <Route index element={<Feed/>} />
+            <Route path='opportunites' element={<Opportunites/>} />
+            <Route path='compagnons' element={<FaithCompanions/>} />
+            <Route path='notifications' element={<Notifications/>} />
+            <Route path='chat' element={<Chat/>} />
+            <Route path='profile' element={<Profile/>} />
+            <Route path='profile/:userId' element={<Profile/>} />
+          </Route>
+          
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
 

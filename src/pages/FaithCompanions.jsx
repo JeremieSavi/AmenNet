@@ -5,9 +5,11 @@ import { collection, query, where, onSnapshot, doc, getDoc, setDoc, deleteDoc, g
 import { useNavigate } from 'react-router-dom'
 import { Search, UserPlus, Clock, CheckCircle2, X, Users, Briefcase, MapPin, Building2, Bell, MessageCircle } from 'lucide-react'
 import { createCompanionRequestNotification, createCompanionAcceptedNotification } from '../services/notificationsService'
+import { useTheme } from '../contexts/ThemeContext'
 
 function FaithCompanions() {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
   const [allUsers, setAllUsers] = useState([])
@@ -272,13 +274,13 @@ function FaithCompanions() {
   }
 
   return (
-    <div className='bg-gray-50 min-h-screen pb-24'>
+    <div className={isDark ? 'bg-slate-900 min-h-screen pb-24' : 'bg-gray-50 min-h-screen pb-24'}>
       <div className='max-w-4xl mx-auto p-4 space-y-6'>
-        {/* Message si l'utilisateur est une église */}
+        {/* Message si l'utilisateur est une Église */}
         {userData?.accountType === 'Église' && (
-          <div className='bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg'>
-            <h2 className='font-bold text-blue-900 mb-2'>ℹ️ Les Églises n'utilisent pas ce système</h2>
-            <p className='text-blue-800 text-sm'>
+          <div className={isDark ? 'bg-slate-800 border-l-4 border-blue-500 p-4 rounded-r-lg' : 'bg-blue-50 border-l-4 border-blue-600 p-4 rounded-r-lg'}>
+            <h2 className={isDark ? 'font-bold text-blue-300 mb-2' : 'font-bold text-blue-900 mb-2'}>ℹ️ Les Églises n'utilisent pas ce système</h2>
+            <p className={isDark ? 'text-blue-200 text-sm' : 'text-blue-800 text-sm'}>
               Les compagnons de foi sont réservés aux fidèles. Les fidèles vous suivent via la page "Suivre cette église" sur votre profil.
             </p>
           </div>
@@ -286,10 +288,10 @@ function FaithCompanions() {
 
         {/* Afficher le contenu seulement si l'utilisateur est un fidèle */}
         {userData?.accountType === 'Église' ? (
-          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'>
-            <Users className='w-12 h-12 text-gray-300 mx-auto mb-4' />
-            <p className='text-gray-600 font-medium'>Accès réservé aux fidèles</p>
-            <p className='text-sm text-gray-500 mt-1'>Cette page est réservée aux comptes fidèles pour gérer leurs compagnons de foi</p>
+          <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-12 text-center' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'}>
+            <Users className={isDark ? 'w-12 h-12 text-gray-600 mx-auto mb-4' : 'w-12 h-12 text-gray-300 mx-auto mb-4'} />
+            <p className={isDark ? 'text-gray-300 font-medium' : 'text-gray-600 font-medium'}>Accès réservé aux fidèles</p>
+            <p className={isDark ? 'text-sm text-gray-400 mt-1' : 'text-sm text-gray-500 mt-1'}>Cette page est réservée aux comptes fidèles pour gérer leurs compagnons de foi</p>
           </div>
         ) : (
           <>
@@ -310,13 +312,13 @@ function FaithCompanions() {
         </div>
 
         {/* Onglets */}
-        <div className='flex gap-2 border-b border-gray-200'>
+        <div className={isDark ? 'flex gap-2 border-b border-slate-700' : 'flex gap-2 border-b border-gray-200'}>
           <button
             onClick={() => setActiveTab('discover')}
             className={`px-4 py-3 font-semibold border-b-2 transition-colors ${
               activeTab === 'discover'
                 ? 'border-[#F97316] text-[#F97316]'
-                : 'border-transparent text-gray-600 hover:text-gray-900'
+                : isDark ? 'border-transparent text-gray-400 hover:text-gray-200' : 'border-transparent text-gray-600 hover:text-gray-900'
             }`}
           >
             <Users className='w-4 h-4 inline mr-2' />

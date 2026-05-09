@@ -1,673 +1,217 @@
 import React, { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import {
   collection,
   query,
-  where,
   onSnapshot,
   doc,
   getDoc,
   setDoc,
   orderBy,
   serverTimestamp,
-  getDocs,
-  deleteDoc,
-  updateDoc
+  where
 } from 'firebase/firestore'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { 
-  Send, Search, Trash2, ArrowLeft, Plus, Phone, Video, Info, X, 
-  Smile, Paperclip, MoreVertical, MessageCircle, Edit2, Check
-} from 'lucide-react'
-import { createNewMessageNotification } from '../services/notificationsService'
-
+import { useNavigate } from 'react-router-dom'
+import { Send, MessageCircle, Search, ArrowLeft } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Chat() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const { isDark } = useTheme()
+
   const [user, setUser] = useState(null)
-  const [userData, setUserData] = useState(null)
   const [companions, setCompanions] = useState([])
-  const [conversations, setConversations] = useState([])
   const [selectedConversation, setSelectedConversation] = useState(null)
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [loadingMessages, setLoadingMessages] = useState(false)
-  const [sendingMessage, setSendingMessage] = useState(false)
-  const [showNewChat, setShowNewChat] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768)
-  const [editingMessageId, setEditingMessageId] = useState(null)
-  const [editingText, setEditingText] = useState('')
-  const [menuOpenId, setMenuOpenId] = useState(null)
 
-  // Récupérer l'utilisateur actuel
+  // AUTH
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser)
-        try {
-          const userRef = doc(db, 'users', currentUser.uid)
-          const userSnap = await getDoc(userRef)
-          if (userSnap.exists()) {
-            setUserData(userSnap.data())
-          }
-        } catch (error) {
-          console.error('Erreur récupération données utilisateur:', error)
-        }
-      } else {
-        navigate('/login')
-      }
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) navigate('/login')
+      else setUser(u)
     })
     return () => unsub()
   }, [navigate])
 
-  // Vérifier si un contact est spécifié dans l'URL
-  useEffect(() => {
-    const withId = searchParams.get('with')
-    if (withId && companions.length > 0) {
-      const companion = companions.find(c => c.id === withId)
-      if (companion) {
-        handleStartChat(companion)
-      }
-    }
-  }, [searchParams, companions])
-
-  // Récupérer les compagnons de foi
+  // LOAD COMPANIONS
   useEffect(() => {
     if (!user) return
 
-    const companionsRef = collection(db, 'users', user.uid, 'faithCompanions')
-    const unsub = onSnapshot(companionsRef, async (snapshot) => {
-      const companionIds = snapshot.docs.map(doc => doc.id)
-
-      const companionsData = await Promise.all(
-        companionIds.map(async (uid) => {
-          const userRef = doc(db, 'users', uid)
-          const userSnap = await getDoc(userRef)
-          return userSnap.exists() ? { id: uid, ...userSnap.data() } : null
-        })
-      )
-
-      setCompanions(companionsData.filter(c => c !== null))
-      setLoading(false)
-    })
-    return () => unsub()
+    return onSnapshot(
+      collection(db, 'users', user.uid, 'faithCompanions'),
+      async (snap) => {
+        const data = await Promise.all(
+          snap.docs.map(async (d) => {
+            const u = await getDoc(doc(db, 'users', d.id))
+            return { id: d.id, ...u.data() }
+          })
+        )
+        setCompanions(data)
+      }
+    )
   }, [user])
 
-  // Récupérer les conversations
+  // AUTO SELECT FIRST CONVERSATION
   useEffect(() => {
-    if (!user || companions.length === 0) return
+    if (companions.length > 0 && !selectedConversation) {
+      const convId = [user.uid, companions[0].id].sort().join('_')
+      setSelectedConversation({ id: convId, companion: companions[0] })
+    }
+  }, [companions, user, selectedConversation])
 
-    const conversationsData = []
-    let loadedCount = 0
-
-    companions.forEach(companion => {
-      const convId = [user.uid, companion.id].sort().join('_')
-      const messagesRef = collection(db, 'conversations', convId, 'messages')
-      const q = query(messagesRef, orderBy('createdAt', 'desc'))
-      
-      const unsub = onSnapshot(q, (snapshot) => {
-        if (snapshot.docs.length > 0) {
-          const lastMessage = snapshot.docs[0].data()
-          const newConv = {
-            id: convId,
-            companion: companion,
-            lastMessage: lastMessage.text,
-            lastMessageTime: lastMessage.createdAt,
-            lastMessageFromMe: lastMessage.senderId === user.uid,
-            messageCount: snapshot.size
-          }
-          
-          conversationsData.push(newConv)
-          const sorted = conversationsData.sort((a, b) => {
-            const timeA = a.lastMessageTime?.toDate?.() || new Date(0)
-            const timeB = b.lastMessageTime?.toDate?.() || new Date(0)
-            return timeB - timeA
-          })
-          setConversations(sorted)
-        }
-        loadedCount++
-      })
-
-      return () => unsub()
-    })
-  }, [user, companions])
-
-  // Charger les messages d'une conversation
+  // LOAD MESSAGES
   useEffect(() => {
-    if (!selectedConversation || !user) return
+    if (!selectedConversation) return
 
-    setLoadingMessages(true)
-    const messagesRef = collection(db, 'conversations', selectedConversation.id, 'messages')
-    const q = query(messagesRef, orderBy('createdAt', 'asc'))
+    return onSnapshot(
+      query(collection(db, 'conversations', selectedConversation.id, 'messages'), orderBy('createdAt', 'asc')),
+      (snap) => {
+        setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+      }
+    )
+  }, [selectedConversation])
 
-    const unsub = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })))
-      setLoadingMessages(false)
-      
-      setTimeout(() => {
-        const chatContainer = document.getElementById('messages-container')
-        if (chatContainer) {
-          chatContainer.scrollTop = chatContainer.scrollHeight
-        }
-      }, 100)
-    })
-
-    return () => unsub()
-  }, [selectedConversation, user])
-
-  // Envoyer un message
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !selectedConversation || !user || !userData) return
+    if (!newMessage.trim() || !selectedConversation) return
 
-    setSendingMessage(true)
-    try {
-      const messagesRef = collection(db, 'conversations', selectedConversation.id, 'messages')
-      await setDoc(doc(messagesRef), {
+    await setDoc(
+      doc(collection(db, 'conversations', selectedConversation.id, 'messages')),
+      {
         text: newMessage,
         senderId: user.uid,
-        senderName: userData.accountType === 'Église' ? userData.egliseName : `${userData.prenom} ${userData.nom}`,
-        createdAt: serverTimestamp(),
-        isEdited: false
-      })
+        createdAt: serverTimestamp()
+      }
+    )
 
-      const companion = selectedConversation.companion
-      const senderName = userData.accountType === 'Église' 
-        ? userData.egliseName 
-        : `${userData.prenom} ${userData.nom}`
-      const messagePreview = newMessage.length > 50 
-        ? `${newMessage.substring(0, 50)}...` 
-        : newMessage
-      await createNewMessageNotification(companion.id, user.uid, senderName, messagePreview)
-
-      setNewMessage('')
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('⛔ Erreur lors de l\'envoi du message')
-    } finally {
-      setSendingMessage(false)
-    }
+    setNewMessage('')
   }
 
-  // Modifier un message
-  const handleEditMessage = async (messageId, newText) => {
-    if (!newText.trim() || !selectedConversation) return
-
-    try {
-      const msgRef = doc(db, 'conversations', selectedConversation.id, 'messages', messageId)
-      await updateDoc(msgRef, {
-        text: newText,
-        isEdited: true,
-        editedAt: serverTimestamp()
-      })
-      setEditingMessageId(null)
-      setEditingText('')
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('⛔ Erreur lors de la modification du message')
-    }
-  }
-
-  // Supprimer un message
-  const handleDeleteMessage = async (messageId) => {
-    if (!window.confirm('Supprimer ce message?')) return
-
-    try {
-      const msgRef = doc(db, 'conversations', selectedConversation.id, 'messages', messageId)
-      await deleteDoc(msgRef)
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('⛔ Erreur lors de la suppression')
-    }
-  }
-  const handleStartChat = (companion) => {
+  const handleSelectConversation = (companion) => {
     const convId = [user.uid, companion.id].sort().join('_')
-    const existingConv = conversations.find(c => c.id === convId)
-    
-    if (existingConv) {
-      setSelectedConversation(existingConv)
-    } else {
-      const newConv = {
-        id: convId,
-        companion: companion,
-        lastMessage: '',
-        lastMessageTime: new Date(),
-        lastMessageFromMe: false,
-        messageCount: 0
-      }
-      setSelectedConversation(newConv)
-    }
-    setShowNewChat(false)
-  }
-
-  // Supprimer une conversation
-  const handleDeleteConversation = async (convId) => {
-    if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette conversation?')) return
-
-    try {
-      const messagesRef = collection(db, 'conversations', convId, 'messages')
-      const messages = await getDocs(messagesRef)
-      
-      for (const msgDoc of messages.docs) {
-        await deleteDoc(msgDoc.ref)
-      }
-      
-      setSelectedConversation(null)
-    } catch (error) {
-      console.error('Erreur:', error)
-      alert('⛔ Erreur lors de la suppression')
-    }
-  }
-
-  // Filtrer conversations
-  const filteredConversations = conversations.filter(conv => {
-    if (!searchQuery) return true
-    const name = conv.companion.accountType === 'Église' 
-      ? conv.companion.egliseName 
-      : `${conv.companion.prenom} ${conv.companion.nom}`
-    return name.toLowerCase().includes(searchQuery.toLowerCase())
-  })
-
-  // Formater time relative
-  const getTimeAgo = (timestamp) => {
-    if (!timestamp) return ''
-    const date = timestamp.toDate?.() || new Date(timestamp)
-    const now = new Date()
-    const diffMs = now - date
-    const diffMins = Math.floor(diffMs / 60000)
-    const diffHours = Math.floor(diffMs / 3600000)
-    const diffDays = Math.floor(diffMs / 86400000)
-
-    if (diffMins < 1) return 'À l\'instant'
-    if (diffMins < 60) return `${diffMins}m`
-    if (diffHours < 24) return `${diffHours}h`
-    if (diffDays < 7) return `${diffDays}j`
-    return date.toLocaleDateString('fr-FR')
-  }
-
-  const getCompanionName = (companion) => {
-    return companion.accountType === 'Église' 
-      ? companion.egliseName 
-      : `${companion.prenom} ${companion.nom}`
-  }
-
-  const getInitials = (companion) => {
-    if (companion.accountType === 'Église') {
-      return companion.egliseName.charAt(0)
-    }
-    return (companion.prenom?.charAt(0) + companion.nom?.charAt(0)).toUpperCase()
+    setSelectedConversation({ id: convId, companion })
+    if (isMobileView) setIsMobileView(false)
   }
 
   return (
-    <div className='flex h-screen bg-gray-50'>
-      {/* Liste des conversations (Desktop: 350px, Mobile: full) */}
-      {(!isMobileView || !selectedConversation) && (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className='w-full md:w-96 border-r border-gray-200 bg-white flex flex-col'
-        >
-          {/* Header de la liste */}
-          <div className='p-4 border-b border-gray-200 space-y-3'>
-            <div className='flex items-center justify-between'>
-              <h1 className='text-2xl font-bold text-gray-900'>Messages</h1>
-              {companions.length > 0 && (
-                <motion.button
-                  onClick={() => setShowNewChat(!showNewChat)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className='p-2 bg-[#F97316] text-white rounded-full hover:bg-orange-600'
-                >
-                  <Plus className='w-5 h-5' />
-                </motion.button>
-              )}
-            </div>
+    <div className={`flex h-screen overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
 
-            {/* Barre de recherche */}
-            <div className='relative'>
-              <Search className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+      {/* CONVERSATIONS LIST */}
+      {(!isMobileView || !selectedConversation) && (
+        <div className={`w-full md:w-96 border-r flex flex-col ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+          
+          {/* HEADER */}
+          <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Messages</h1>
+          </div>
+
+          {/* SEARCH */}
+          <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
+              <Search size={18} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
               <input
-                type='text'
-                placeholder='Rechercher un message...'
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className='w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                placeholder="Chercher..."
+                className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
               />
             </div>
           </div>
 
-          {/* Onglets Nouveau Chat */}
-          <AnimatePresence>
-            {showNewChat && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className='border-b border-gray-200 max-h-64 overflow-y-auto'
-              >
-                <div className='p-3 space-y-2'>
-                  {companions
-                    .filter(c => !conversations.find(conv => conv.companion.id === c.id))
-                    .map(companion => (
-                      <motion.button
-                        key={companion.id}
-                        onClick={() => handleStartChat(companion)}
-                        whileHover={{ backgroundColor: '#f3f4f6' }}
-                        className='w-full flex items-center gap-3 p-2 rounded-lg transition-colors'
-                      >
-                        <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
-                          {getInitials(companion)}
-                        </div>
-                        <div className='flex-1 text-left'>
-                          <p className='font-semibold text-sm text-gray-900'>
-                            {getCompanionName(companion)}
-                          </p>
-                        </div>
-                      </motion.button>
-                    ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Liste des conversations */}
-          <div className='flex-1 overflow-y-auto'>
-            {loading ? (
-              <div className='flex items-center justify-center h-full'>
-                <div className='w-8 h-8 border-4 border-[#F97316] border-t-transparent rounded-full animate-spin'></div>
-              </div>
-            ) : filteredConversations.length === 0 ? (
-              <div className='flex flex-col items-center justify-center h-full text-center p-4'>
-                <MessageCircle className='w-12 h-12 text-gray-300 mb-2' />
-                <p className='text-gray-600 font-medium'>Aucun message</p>
-                <p className='text-sm text-gray-500'>Commencez une conversation!</p>
+          {/* COMPANIONS LIST */}
+          <div className="flex-1 overflow-y-auto">
+            {companions.length === 0 ? (
+              <div className={`flex flex-col items-center justify-center h-full opacity-50 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <MessageCircle size={32} className="mb-2" />
+                <p className="text-sm">Aucun compagnon</p>
               </div>
             ) : (
-              <div className='space-y-1 p-2'>
-                {filteredConversations.map(conv => (
-                  <motion.div
-                    key={conv.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    onClick={() => setSelectedConversation(conv)}
-                    className={`group flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedConversation?.id === conv.id
-                        ? 'bg-[#F97316] text-white'
-                        : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <div className='w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0'>
-                      {getInitials(conv.companion)}
-                    </div>
-                    
-                    <div className='flex-1 min-w-0'>
-                      <p className='font-semibold text-sm line-clamp-1'>
-                        {getCompanionName(conv.companion)}
-                      </p>
-                      <p className={`text-xs line-clamp-1 ${
-                        selectedConversation?.id === conv.id ? 'text-orange-100' : 'text-gray-600'
-                      }`}>
-                        {conv.lastMessageFromMe && '👤 Vous: '}
-                        {conv.lastMessage}
-                      </p>
-                    </div>
-
-                    <div className='text-right text-xs flex-shrink-0'>
-                      <p className={selectedConversation?.id === conv.id ? 'text-orange-100' : 'text-gray-500'}>
-                        {getTimeAgo(conv.lastMessageTime)}
-                      </p>
-                    </div>
-
-                    <motion.button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleDeleteConversation(conv.id)
-                      }}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      className='opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded text-red-600 transition-all'
-                    >
-                      <Trash2 className='w-4 h-4' />
-                    </motion.button>
-                  </motion.div>
-                ))}
-              </div>
+              companions.map((comp) => (
+                <motion.div
+                  key={comp.id}
+                  onClick={() => handleSelectConversation(comp)}
+                  className={`p-4 border-b cursor-pointer transition ${
+                    selectedConversation?.companion.id === comp.id
+                      ? isDark ? 'bg-slate-700' : 'bg-orange-50'
+                      : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
+                  } ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
+                  whileHover={{ x: 4 }}
+                >
+                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.prenom}</p>
+                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.email}</p>
+                </motion.div>
+              ))
             )}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Chat Area */}
+      {/* CHAT AREA */}
       {selectedConversation ? (
-        <motion.div
-          key={selectedConversation.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className='flex-1 flex flex-col'
-        >
-          {/* Header du chat */}
-          <div className='flex-shrink-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              {isMobileView && (
-                <motion.button
-                  onClick={() => setSelectedConversation(null)}
-                  whileHover={{ scale: 1.1 }}
-                  className='p-2 hover:bg-gray-100 rounded'
-                >
-                  <ArrowLeft className='w-5 h-5' />
-                </motion.button>
-              )}
-              
-              <div className='w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm'>
-                {getInitials(selectedConversation.companion)}
-              </div>
-              
-              <div>
-                <h2 className='font-bold text-gray-900'>
-                  {getCompanionName(selectedConversation.companion)}
-                </h2>
-                <p className='text-xs text-gray-500'>Compagnon de foi</p>
-              </div>
-            </div>
+        <div className="flex-1 flex flex-col min-h-0">
 
-            <div className='flex gap-2'>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className='p-2 hover:bg-gray-100 rounded-full text-gray-600'
-              >
-                <Phone className='w-5 h-5' />
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className='p-2 hover:bg-gray-100 rounded-full text-gray-600'
-              >
-                <Info className='w-5 h-5' />
-              </motion.button>
+          {/* HEADER */}
+          <div className={`p-4 border-b flex-shrink-0 flex items-center gap-3 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+            {isMobileView && (
+              <button onClick={() => setIsMobileView(true)} className={isDark ? 'text-gray-300' : 'text-gray-600'}>
+                <ArrowLeft size={20} />
+              </button>
+            )}
+            <div>
+              <h3 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedConversation.companion.prenom}</h3>
+              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{selectedConversation.companion.email}</p>
             </div>
           </div>
 
-          {/* Messages */}
-          <div
-            id='messages-container'
-            className='flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-gray-50 to-white'
-          >
-            {loadingMessages ? (
-              <div className='flex items-center justify-center h-full'>
-                <div className='w-8 h-8 border-4 border-[#F97316] border-t-transparent rounded-full animate-spin'></div>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className='flex flex-col items-center justify-center h-full text-center'>
-                <MessageCircle className='w-16 h-16 text-gray-200 mb-2' />
-                <p className='text-gray-600 font-medium'>Commencez la conversation!</p>
+          {/* MESSAGES */}
+          <div className={`flex-1 min-h-0 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+            {messages.length === 0 ? (
+              <div className={`flex items-center justify-center h-full opacity-50 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <MessageCircle size={32} />
               </div>
             ) : (
-              messages.map((msg) => {
-                const isOwn = msg.senderId === user?.uid
-                return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
-                    onMouseEnter={() => setMenuOpenId(isOwn ? msg.id : null)}
-                    onMouseLeave={() => setMenuOpenId(null)}
+              messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  className={`flex ${msg.senderId === user?.uid ? 'justify-end' : 'justify-start'}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div
+                    className={`max-w-xs px-4 py-2 rounded-lg ${
+                      msg.senderId === user?.uid
+                        ? isDark ? 'bg-orange-600' : 'bg-orange-500 text-white'
+                        : isDark ? 'bg-slate-700 text-white' : 'bg-gray-200 text-gray-900'
+                    }`}
                   >
-                    <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg relative ${
-                      isOwn
-                        ? 'bg-[#F97316] text-white rounded-br-none'
-                        : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                    }`}>
-                      {/* Edit Mode */}
-                      {editingMessageId === msg.id ? (
-                        <div className='space-y-2'>
-                          <input
-                            type='text'
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className='w-full px-2 py-1 rounded bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316]'
-                            autoFocus
-                          />
-                          <div className='flex gap-2'>
-                            <motion.button
-                              onClick={() => handleEditMessage(msg.id, editingText)}
-                              whileHover={{ scale: 1.05 }}
-                              className='flex-1 px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs font-medium flex items-center justify-center gap-1'
-                            >
-                              <Check className='w-3 h-3' /> Valider
-                            </motion.button>
-                            <motion.button
-                              onClick={() => setEditingMessageId(null)}
-                              whileHover={{ scale: 1.05 }}
-                              className='flex-1 px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded text-xs font-medium'
-                            >
-                              Annuler
-                            </motion.button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <p className='text-sm'>{msg.text}</p>
-                          <div className='flex items-center justify-between mt-1 gap-2'>
-                            <div className={`text-xs ${isOwn ? 'text-orange-100' : 'text-gray-600'}`}>
-                              {msg.isEdited && (
-                                <span className='italic'>(modifié) </span>
-                              )}
-                              {new Date(msg.createdAt?.toDate?.() || msg.createdAt).toLocaleTimeString('fr-FR', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                              {msg.editedAt && (
-                                <span className='block text-xs'>
-                                  {new Date(msg.editedAt?.toDate?.() || msg.editedAt).toLocaleTimeString('fr-FR', {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Menu boutons */}
-                      <AnimatePresence>
-                        {isOwn && menuOpenId === msg.id && editingMessageId !== msg.id && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            className='absolute -left-16 top-0 flex gap-2 bg-white rounded-lg shadow-lg p-2'
-                          >
-                            <motion.button
-                              onClick={() => {
-                                setEditingMessageId(msg.id)
-                                setEditingText(msg.text)
-                              }}
-                              whileHover={{ scale: 1.1 }}
-                              className='p-1.5 hover:bg-gray-100 rounded text-[#F97316]'
-                              title='Modifier'
-                            >
-                              <Edit2 className='w-4 h-4' />
-                            </motion.button>
-                            <motion.button
-                              onClick={() => handleDeleteMessage(msg.id)}
-                              whileHover={{ scale: 1.1 }}
-                              className='p-1.5 hover:bg-gray-100 rounded text-red-600'
-                              title='Supprimer'
-                            >
-                              <Trash2 className='w-4 h-4' />
-                            </motion.button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )
-              })
+                    <p className={msg.senderId === user?.uid ? 'text-white' : isDark ? 'text-white' : 'text-gray-900'}>
+                      {msg.text}
+                    </p>
+                  </div>
+                </motion.div>
+              ))
             )}
           </div>
 
-          {/* Input Area */}
-          <div className='flex-shrink-0 bg-white border-t border-gray-200 p-4'>
-            <form onSubmit={handleSendMessage} className='flex gap-2'>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type='button'
-                className='p-2 hover:bg-gray-100 rounded-full text-gray-600'
-              >
-                <Paperclip className='w-5 h-5' />
-              </motion.button>
-
-              <input
-                type='text'
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder='Votre message...'
-                className='flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#F97316]'
-              />
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type='button'
-                className='p-2 hover:bg-gray-100 rounded-full text-gray-600'
-              >
-                <Smile className='w-5 h-5' />
-              </motion.button>
-
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type='submit'
-                disabled={sendingMessage || !newMessage.trim()}
-                className='p-2 bg-[#F97316] hover:bg-orange-600 rounded-full text-white disabled:opacity-50'
-              >
-                <Send className='w-5 h-5' />
-              </motion.button>
-            </form>
-          </div>
-        </motion.div>
+          {/* INPUT FORM */}
+          <form onSubmit={handleSendMessage} className={`p-4 flex gap-3 relative -top-20 border-t flex-shrink-0 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+            <input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Écrivez votre message..."
+              className={`flex-1 px-4 py-2  rounded-lg border-2 font-medium transition ${isDark ? 'bg-slate-700 border-orange-500 text-white placeholder-gray-300 focus:border-orange-600' : 'bg-orange-50 border-orange-400 text-gray-900 placeholder-gray-600 focus:border-orange-600'} focus:outline-none`}
+            />
+            <button type="submit" className={`px-6 py-2 rounded-lg font-bold transition hover:scale-105 ${isDark ? 'bg-orange-600 hover:bg-orange-700 text-white' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}>
+              <Send size={20} />
+            </button>
+          </form>
+        </div>
       ) : (
-        !isMobileView && (
-          <div className='flex-1 flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100'>
-            <div className='text-center'>
-              <MessageCircle className='w-20 h-20 text-gray-300 mx-auto mb-4' />
-              <h2 className='text-2xl font-bold text-gray-600'>Sélectionnez une conversation</h2>
-              <p className='text-gray-500 mt-2'>ou commencez une nouvelle</p>
-            </div>
-          </div>
-        )
+        <div className="flex-1 flex items-center justify-center">
+          <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Sélectionnez une conversation</p>
+        </div>
       )}
     </div>
   )

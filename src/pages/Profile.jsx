@@ -5,9 +5,11 @@ import { doc, getDoc, updateDoc, collection, query, where, onSnapshot, orderBy, 
 import { useNavigate, useParams } from 'react-router-dom'
 import { LogOut, Edit2, Save, X, Mail, Briefcase, MapPin, User, Building2, CheckCircle2, UserPlus, UserCheck, Users, Church, Bookmark } from 'lucide-react'
 import { listenSavedOpportunities } from '../services/opportunitiesService'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Profile() {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const { userId } = useParams()
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
@@ -343,10 +345,10 @@ function Profile() {
   }
 
   return (
-    <div className='bg-gray-50 min-h-screen pb-24'>
+    <div className={isDark ? 'bg-slate-900 min-h-screen pb-24' : 'bg-gray-50 min-h-screen pb-24'}>
       <div className='max-w-3xl mx-auto p-4 space-y-6'>
         {/* En-tête du profil */}
-        <div className='bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden'>
+        <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden' : 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden'}>
           {/* Bannière de fond */}
           <div className='h-28 bg-gradient-to-r from-[#F97316] via-orange-500 to-orange-400'></div>
 
@@ -364,7 +366,7 @@ function Profile() {
                     {userData?.accountType === 'Église' ? (
                       <>
                         <div className='flex items-center space-x-3 mb-2'>
-                          <h1 className='text-3xl font-bold text-gray-900'>
+                          <h1 className={isDark ? 'text-3xl font-bold text-gray-100' : 'text-3xl font-bold text-gray-900'}>
                             {userData?.egliseName}
                           </h1>
                           {userData?.certified && (
@@ -383,7 +385,7 @@ function Profile() {
                       </>
                     ) : (
                       <>
-                        <h1 className='text-3xl font-bold text-gray-900 mb-1'>
+                        <h1 className={isDark ? 'text-3xl font-bold text-gray-100 mb-1' : 'text-3xl font-bold text-gray-900 mb-1'}>
                           {formData.prenom} {formData.nom}
                         </h1>
                         {formData.profession && (

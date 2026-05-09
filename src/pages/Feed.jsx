@@ -3,9 +3,11 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { doc, getDoc, collection, addDoc, updateDoc, deleteDoc, increment, query, where, orderBy, onSnapshot, serverTimestamp, setDoc, getDocs } from 'firebase/firestore'
 import { Heart, MessageCircle, Share2, Bookmark, Loader, Send, Trash2, FileEdit, CheckCircle2 } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 import { createPostLikedNotification, createPostCommentedNotification, createChurchPublishedNotification } from '../services/notificationsService'
 
 function Feed() {
+  const { isDark } = useTheme()
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [postContent, setPostContent] = useState('')
   const [postCategory, setPostCategory] = useState('spirituel')
@@ -578,10 +580,10 @@ function Feed() {
   }
 
   return (
-    <div className='bg-gray-50 min-h-screen pb-24'>
+    <div className={isDark ? 'bg-slate-900 min-h-screen pb-24' : 'bg-gray-50 min-h-screen pb-24'}>
       <div className='max-w-2xl mx-auto space-y-4 p-4'>
         {/* Créer un post */}
-        <div className='bg-white rounded-xl shadow-sm p-4 border border-gray-200'>
+        <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm p-4 border border-slate-700' : 'bg-white rounded-xl shadow-sm p-4 border border-gray-200'}>
           <div className='flex space-x-4'>
             <div className='w-12 h-12 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0'>
               {userData?.prenom?.charAt(0) || user?.email?.charAt(0)}
@@ -590,7 +592,7 @@ function Feed() {
               {!showCreatePost ? (
                 <button
                   onClick={() => setShowCreatePost(true)}
-                  className='w-full bg-gray-100 hover:bg-gray-200 text-left px-4 py-3 rounded-full text-gray-600 transition-colors font-medium'
+                  className={isDark ? 'w-full bg-slate-700 hover:bg-slate-600 text-left px-4 py-3 rounded-full text-gray-400 transition-colors font-medium' : 'w-full bg-gray-100 hover:bg-gray-200 text-left px-4 py-3 rounded-full text-gray-600 transition-colors font-medium'}
                 >
                   Qu'est-ce que tu penses, {userData?.prenom} ?
                 </button>
@@ -601,7 +603,7 @@ function Feed() {
                     onChange={(e) => setPostContent(e.target.value)}
                     placeholder='Partage ta pensée...'
                     rows={5}
-                    className='w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 resize-none font-medium'
+                    className={isDark ? 'w-full p-3 border-2 border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 resize-none font-medium' : 'w-full p-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 resize-none font-medium'}
                   />
                   
                   {/* Sélecteur de catégorie */}
@@ -609,7 +611,7 @@ function Feed() {
                     <select
                       value={postCategory}
                       onChange={(e) => setPostCategory(e.target.value)}
-                      className='w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 font-medium'
+                      className={isDark ? 'w-full px-3 py-2 border-2 border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 font-medium' : 'w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 font-medium'}
                     >
                       <option value='spirituel'>✨ Spirituel</option>
                       <option value='temoignages'>💝 Témoignages</option>
@@ -627,7 +629,7 @@ function Feed() {
                         setPostCategory('spirituel')
                         setEditingPostId(null)
                       }}
-                      className='px-6 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold transition-colors'
+                      className={isDark ? 'px-6 py-2 border-2 border-slate-600 rounded-lg hover:bg-slate-700 font-semibold transition-colors text-gray-300' : 'px-6 py-2 border-2 border-gray-300 rounded-lg hover:bg-gray-100 font-semibold transition-colors'}
                     >
                       Annuler
                     </button>
@@ -648,21 +650,21 @@ function Feed() {
 
         {/* Affichage des posts */}
         {posts.length === 0 ? (
-          <div className='bg-white rounded-xl shadow-sm p-12 text-center border border-gray-200'>
-            <p className='text-gray-500 text-lg'>Aucun post pour le moment. Soyez le premier à publier!</p>
+          <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm p-12 text-center border border-slate-700' : 'bg-white rounded-xl shadow-sm p-12 text-center border border-gray-200'}>
+            <p className={isDark ? 'text-gray-400 text-lg' : 'text-gray-500 text-lg'}>Aucun post pour le moment. Soyez le premier à publier!</p>
           </div>
         ) : (
           posts.map((post) => (
-            <div key={post.id} className='bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow'>
+            <div key={post.id} className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 overflow-hidden hover:shadow-md transition-shadow' : 'bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow'}>
               {/* En-tête du post */}
-              <div className='p-4 border-b border-gray-100 flex items-center justify-between'>
+              <div className={isDark ? 'p-4 border-b border-slate-700 flex items-center justify-between' : 'p-4 border-b border-gray-100 flex items-center justify-between'}>
                 <div className='flex items-center space-x-3 flex-1'>
                   <div className='w-12 h-12 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0'>
                     {getAuthorFullName(post)?.charAt(0)}
                   </div>
                   <div className='flex-1 min-w-0'>
                     <div className='flex items-center space-x-2 flex-wrap'>
-                      <p className='font-bold text-gray-900 text-sm md:text-base'>
+                      <p className={isDark ? 'font-bold text-gray-100 text-sm md:text-base' : 'font-bold text-gray-900 text-sm md:text-base'}>
                         {getAuthorFullName(post)}
                       </p>
                       {postAuthors[post.authorId]?.accountType === 'Église' && postAuthors[post.authorId]?.certified && (
@@ -677,7 +679,7 @@ function Feed() {
                         </span>
                       )}
                     </div>
-                    <p className='text-xs text-gray-500'>
+                    <p className={isDark ? 'text-xs text-gray-400' : 'text-xs text-gray-500'}>
                       {formatDate(post.createdAt)}
                     </p>
                   </div>
@@ -705,26 +707,26 @@ function Feed() {
 
               {/* Contenu */}
               <div className='p-4'>
-                <p className='text-gray-800 whitespace-pre-wrap leading-relaxed text-sm md:text-base'>
+                <p className={isDark ? 'text-gray-200 whitespace-pre-wrap leading-relaxed text-sm md:text-base' : 'text-gray-800 whitespace-pre-wrap leading-relaxed text-sm md:text-base'}>
                   {post.content}
                 </p>
               </div>
 
               {/* Statistiques */}
-              <div className='px-4 py-2 bg-gray-50 text-xs text-gray-600 border-b border-gray-100 flex flex-wrap gap-4'>
+              <div className={isDark ? 'px-4 py-2 bg-slate-700 text-xs text-gray-400 border-b border-slate-700 flex flex-wrap gap-4' : 'px-4 py-2 bg-gray-50 text-xs text-gray-600 border-b border-gray-100 flex flex-wrap gap-4'}>
                 <span className='flex items-center gap-1'>❤️ <strong>{post.likes || 0}</strong> j'aime</span>
                 <span className='flex items-center gap-1'>💬 <strong>{post.comments || 0}</strong> commentaire{post.comments !== 1 ? 's' : ''}</span>
                 <span className='flex items-center gap-1'>↗️ <strong>{post.shares || 0}</strong> partage{post.shares !== 1 ? 's' : ''}</span>
               </div>
 
               {/* Boutons d'action */}
-              <div className='px-4 py-2 grid grid-cols-4 gap-1 border-b border-gray-100'>
+              <div className={isDark ? 'px-4 py-2 grid grid-cols-4 gap-1 border-b border-slate-700' : 'px-4 py-2 grid grid-cols-4 gap-1 border-b border-gray-100'}>
                 <button
                   onClick={() => handleLike(post.id)}
-                  className={`flex items-center justify-center space-x-1 py-2 rounded-lg transition-colors font-medium text-sm ${
+                    className={`flex items-center justify-center space-x-1 py-2 rounded-lg transition-colors font-medium text-sm ${
                     postLikes[post.id]
                       ? 'text-red-600 hover:bg-red-50'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : isDark ? 'text-gray-400 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   <Heart className={`w-5 h-5 ${postLikes[post.id] ? 'fill-current' : ''}`} />
@@ -736,7 +738,7 @@ function Feed() {
                     ...prev,
                     [post.id]: !prev[post.id]
                   }))}
-                  className='flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-medium text-sm'
+                  className={isDark ? 'flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-400 hover:bg-slate-700 transition-colors font-medium text-sm' : 'flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-medium text-sm'}
                 >
                   <MessageCircle className='w-5 h-5' />
                   <span className='hidden sm:inline'>Commenter</span>
@@ -744,7 +746,7 @@ function Feed() {
 
                 <button
                   onClick={() => handleShare(post.id)}
-                  className='flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-medium text-sm'
+                  className={isDark ? 'flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-400 hover:bg-slate-700 transition-colors font-medium text-sm' : 'flex items-center justify-center space-x-1 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors font-medium text-sm'}
                 >
                   <Share2 className='w-5 h-5' />
                   <span className='hidden sm:inline'>Partager</span>
@@ -755,7 +757,7 @@ function Feed() {
                   className={`flex items-center justify-center space-x-1 py-2 rounded-lg transition-colors font-medium text-sm ${
                     postSaved[post.id]
                       ? 'text-orange-600 hover:bg-orange-50'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      : isDark ? 'text-gray-400 hover:bg-slate-700' : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   <Bookmark className={`w-5 h-5 ${postSaved[post.id] ? 'fill-current' : ''}`} />
@@ -765,7 +767,7 @@ function Feed() {
 
               {/* Section Commentaires */}
               {expandedComments[post.id] && (
-                <div className='p-4 bg-gray-50 border-t border-gray-100 space-y-4'>
+                <div className={isDark ? 'p-4 bg-slate-700 border-t border-slate-700 space-y-4' : 'p-4 bg-gray-50 border-t border-gray-100 space-y-4'}>
                   {/* Ajouter un commentaire */}
                   {user && (
                     <div className='flex space-x-3'>
@@ -781,7 +783,7 @@ function Feed() {
                             ...prev,
                             [post.id]: e.target.value
                           }))}
-                          className='flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent'
+                          className={isDark ? 'flex-1 px-3 py-2 border border-slate-600 bg-slate-600 text-gray-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent' : 'flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent'}
                         />
                         <button
                           onClick={() => handleAddComment(post.id)}
@@ -795,7 +797,7 @@ function Feed() {
                   )}
 
                   {/* Affichage des commentaires */}
-                  <div className='space-y-4 max-h-96 overflow-y-auto'>
+                  <div className={isDark ? 'space-y-4 max-h-96 overflow-y-auto' : 'space-y-4 max-h-96 overflow-y-auto'}>
                     {(postComments[post.id] || []).length === 0 ? (
                       <p className='text-center text-gray-500 text-sm py-4'>Aucun commentaire pour le moment</p>
                     ) : (

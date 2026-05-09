@@ -1,155 +1,393 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
-import { Heart, Users, MessageSquare, Globe, Zap, Shield } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import {
+  Users, MessageCircle, Briefcase, Heart, Zap, Globe, ArrowRight,
+  CheckCircle, Star, Sparkles, Shield, Flame, Share2, TrendingUp, Moon, Sun
+} from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Landing() {
+  const navigate = useNavigate()
+  const { isDark, toggleTheme } = useTheme()
+
+  const features = [
+    {
+      icon: Users,
+      title: 'Compagnons de Foi',
+      description: 'Connectez-vous avec d\'autres croyants et construisez une communauté spirituelle forte.',
+      color: 'from-blue-400 to-blue-600'
+    },
+    {
+      icon: MessageCircle,
+      title: 'Partage & Discussion',
+      description: 'Participez à des conversations significatives et partagez vos témoignages inspirants.',
+      color: 'from-purple-400 to-purple-600'
+    },
+    {
+      icon: Briefcase,
+      title: 'Opportunités',
+      description: 'Découvrez des emplois, stages, formations et investissements spirituellement alignés.',
+      color: 'from-green-400 to-green-600'
+    },
+    {
+      icon: Heart,
+      title: 'Église & Événements',
+      description: 'Suivez les églises, participez à des événements et restez connecté avec votre communauté.',
+      color: 'from-red-400 to-red-600'
+    },
+    {
+      icon: MessageCircle,
+      title: 'Messages Privés',
+      description: 'Communiquez discrètement avec vos compagnons de foi via une messagerie sécurisée.',
+      color: 'from-pink-400 to-pink-600'
+    },
+    {
+      icon: Zap,
+      title: 'Notifications Temps Réel',
+      description: 'Restez à jour avec les notifications instantanées de toute l\'activité importante.',
+      color: 'from-yellow-400 to-yellow-600'
+    }
+  ]
+
+  const stats = [
+    { number: '10K+', label: 'Utilisateurs Actifs' },
+    { number: '500+', label: 'Églises' },
+    { number: '1M+', label: 'Interactions' },
+    { number: '24/7', label: 'Support' }
+  ]
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+  }
+
   return (
-    <div className='min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50'>
-      {/* Navbar */}
-      <nav className='bg-white shadow-sm sticky top-0 z-50'>
-        <div className='max-w-7xl mx-auto px-4 py-4 flex justify-between items-center'>
-          <h1 className='text-3xl font-bold bg-gradient-to-r from-[#F97316] to-orange-500 bg-clip-text text-transparent'>AmenNet</h1>
-          <div className='flex space-x-3'>
-            <NavLink to='/login' className='px-6 py-2 text-gray-700 font-semibold hover:text-[#F97316] transition-colors'>Se connecter</NavLink>
-            <NavLink to='/signin' className='px-6 py-2 bg-[#F97316] text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors shadow-lg'>S'inscrire</NavLink>
+    <div className={isDark ? 'bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 min-h-screen overflow-x-hidden' : 'bg-gradient-to-b from-white via-gray-50 to-gray-100 min-h-screen overflow-x-hidden'}>
+      {/* Navigation */}
+      <nav className={isDark ? 'fixed top-0 w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-700 shadow-sm' : 'fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm'}>
+        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className='flex items-center space-x-2'
+          >
+            <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-xl'>
+              A
+            </div>
+            <span className={isDark ? 'text-white font-bold text-xl hidden sm:inline' : 'text-gray-900 font-bold text-xl hidden sm:inline'}>AmenNet</span>
+          </motion.div>
+
+          <div className='flex gap-3 items-center'>
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={toggleTheme}
+              className={isDark ? 'p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors' : 'p-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition-colors'}
+            >
+              {isDark ? (
+                <Sun className='w-5 h-5 text-yellow-400' />
+              ) : (
+                <Moon className='w-5 h-5 text-slate-700' />
+              )}
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/login')}
+              className={isDark ? 'px-6 py-2 text-gray-300 border border-[#F97316] rounded-lg hover:bg-[#F97316]/10 transition-colors font-semibold' : 'px-6 py-2 text-gray-700 border border-[#F97316] rounded-lg hover:bg-[#F97316]/10 transition-colors font-semibold'}
+            >
+              Se connecter
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/signin')}
+              className='px-6 py-2 bg-gradient-to-r from-[#F97316] to-orange-600 text-white rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all font-semibold'
+            >
+              S'inscrire
+            </motion.button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className='max-w-7xl mx-auto px-4 py-20 text-center'>
-        <div className='mb-8'>
-          <h2 className='text-6xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight'>
-            Connectez-vous <span className='bg-gradient-to-r from-[#F97316] to-orange-500 bg-clip-text text-transparent'>Spirituellement</span>
-          </h2>
-          <p className='text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto'>
-            Rejoignez une communauté chrétienne vibrante. Partagez votre foi, trouvez du soutien et grandissez ensemble dans votre foi.
-          </p>
-          <div className='flex flex-col sm:flex-row justify-center gap-4'>
-            <NavLink to='/signin' className='px-8 py-4 bg-[#F97316] text-white rounded-xl font-bold text-lg hover:bg-orange-600 transition-all transform hover:scale-105 shadow-xl'>
-              Commencer Maintenant
-            </NavLink>
-            <NavLink to='/login' className='px-8 py-4 border-2 border-[#F97316] text-[#F97316] rounded-xl font-bold text-lg hover:bg-orange-50 transition-all'>
-              Déjà membre ?
-            </NavLink>
-          </div>
-        </div>
+      <section className='pt-32 pb-20 px-4 sm:px-6 lg:px-8'>
+        <div className='max-w-7xl mx-auto'>
+          <motion.div
+            variants={containerVariants}
+            initial='hidden'
+            animate='visible'
+            className='grid md:grid-cols-2 gap-12 items-center'
+          >
+            {/* Texte Hero */}
+            <motion.div variants={itemVariants} className='space-y-6'>
+              <div className='space-y-3'>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className='inline-flex items-center space-x-2 bg-[#F97316]/10 border border-[#F97316]/20 rounded-full px-4 py-2'
+                >
+                  <Sparkles className='w-4 h-4 text-[#F97316]' />
+                  <span className='text-[#F97316] font-semibold text-sm'>Bienvenue sur AmenNet</span>
+                </motion.div>
 
-        {/* Illustration avec emojis */}
-        <div className='mt-16 grid grid-cols-3 md:grid-cols-6 gap-4 opacity-80'>
-          <div className='text-6xl'>🙏</div>
-          <div className='text-6xl'>💬</div>
-          <div className='text-6xl'>❤️</div>
-          <div className='text-6xl'>🤝</div>
-          <div className='text-6xl'>📖</div>
-          <div className='text-6xl'>✨</div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className='bg-white py-20'>
-        <div className='max-w-7xl mx-auto px-4'>
-          <h3 className='text-4xl font-bold text-center text-gray-900 mb-16'>Pourquoi Rejoindre AmenNet ?</h3>
-          
-          <div className='grid md:grid-cols-3 gap-8'>
-            {/* Feature 1 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <Heart className='w-8 h-8 text-white' />
+                <h1 className={isDark ? 'text-5xl md:text-6xl font-bold text-white leading-tight' : 'text-5xl md:text-6xl font-bold text-gray-900 leading-tight'}>
+                  Connectez-vous avec votre{' '}
+                  <span className='bg-gradient-to-r from-[#F97316] to-orange-400 bg-clip-text text-transparent'>
+                    Communauté de Foi
+                  </span>
+                </h1>
               </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Partage Authentique</h4>
-              <p className='text-gray-700'>Partage tes témoignages, tes prières et tes victoires spirituelles avec une communauté bienveillante.</p>
-            </div>
 
-            {/* Feature 2 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <Users className='w-8 h-8 text-white' />
-              </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Communauté Forte</h4>
-              <p className='text-gray-700'>Connecte-toi avec d'autres fidèles, trouve un soutien mutuel et construis des amitiés durables.</p>
-            </div>
+              <p className={isDark ? 'text-xl text-slate-300 leading-relaxed' : 'text-xl text-gray-700 leading-relaxed'}>
+                Découvrez une plateforme révolutionnaire où la spiritualité, la communauté et l'opportunité se rencontrent. Rejoignez des milliers de fidèles et d'églises dans un espace de confiance et d'inspiration.
+              </p>
 
-            {/* Feature 3 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <Globe className='w-8 h-8 text-white' />
-              </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Événements Locaux</h4>
-              <p className='text-gray-700'>Découvre les églises près de toi, les événements spirituels et les opportunités de service.</p>
-            </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+                className='flex gap-4 pt-4 flex-wrap'
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05, boxShadow: '0 20px 25px -5px rgba(249, 115, 22, 0.3)' }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/signin')}
+                  className='px-8 py-4 bg-gradient-to-r from-[#F97316] to-orange-600 text-white rounded-lg font-bold text-lg flex items-center space-x-2 hover:shadow-xl transition-all'
+                >
+                  <span>Commencer Maintenant</span>
+                  <ArrowRight className='w-5 h-5' />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className='px-8 py-4 border-2 border-[#F97316] text-[#F97316] rounded-lg font-bold text-lg hover:bg-[#F97316]/10 transition-colors'
+                >
+                  En Savoir Plus
+                </motion.button>
+              </motion.div>
 
-            {/* Feature 4 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-green-50 to-green-100 border border-green-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <MessageSquare className='w-8 h-8 text-white' />
-              </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Discussions Vivantes</h4>
-              <p className='text-gray-700'>Engage-toi dans des conversations significatives autour de versets, de questionnements spirituels.</p>
-            </div>
+              {/* Trust Badges */}
+              <motion.div
+                variants={itemVariants}
+                className={isDark ? 'flex gap-6 pt-4 text-sm text-slate-300 flex-wrap' : 'flex gap-6 pt-4 text-sm text-gray-700 flex-wrap'}
+              >
+                <div className='flex items-center space-x-2'>
+                  <Shield className='w-5 h-5 text-green-500' />
+                  <span>100% Sécurisé</span>
+                </div>
+                <div className='flex items-center space-x-2'>
+                  <CheckCircle className='w-5 h-5 text-green-500' />
+                  <span>Gratuit</span>
+                </div>
+                <div className='flex items-center space-x-2'>
+                  <Star className='w-5 h-5 text-green-500' />
+                  <span>4.9/5 ⭐</span>
+                </div>
+              </motion.div>
+            </motion.div>
 
-            {/* Feature 5 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-yellow-50 to-yellow-100 border border-yellow-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <Zap className='w-8 h-8 text-white' />
-              </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Inspiration Quotidienne</h4>
-              <p className='text-gray-700'>Reçois des versets inspirants, des témoignages et du contenu spirituel édifiant chaque jour.</p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className='p-8 rounded-2xl bg-gradient-to-br from-red-50 to-red-100 border border-red-200 hover:shadow-xl transition-shadow'>
-              <div className='w-16 h-16 bg-[#F97316] rounded-xl flex items-center justify-center mb-4'>
-                <Shield className='w-8 h-8 text-white' />
-              </div>
-              <h4 className='text-2xl font-bold text-gray-900 mb-3'>Espace Sûr</h4>
-              <p className='text-gray-700'>Un environnement modéré et sécurisé où ta foi et tes valeurs sont respectées et protégées.</p>
-            </div>
-          </div>
+            {/* Illustration Hero */}
+            <motion.div
+              variants={itemVariants}
+              className='relative hidden md:block'
+            >
+              <motion.div
+                animate={{ y: [0, 20, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+                className='relative'
+              >
+                <div className='absolute inset-0 bg-gradient-to-r from-[#F97316]/10 to-blue-400/10 rounded-3xl blur-3xl'></div>
+                <div className={isDark ? 'relative bg-gradient-to-br from-slate-700 to-slate-800 rounded-3xl p-8 border border-slate-600' : 'relative bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl p-8 border border-gray-300'}>
+                  <div className='space-y-4'>
+                    {[1, 2, 3].map((i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.5 + i * 0.1 }}
+                        className={isDark ? 'flex items-center space-x-3 p-3 bg-slate-600/50 rounded-lg' : 'flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-200'}
+                      >
+                        <div className='w-3 h-3 rounded-full bg-[#F97316]'></div>
+                        <div className={isDark ? 'h-2 bg-slate-500 rounded flex-1' : 'h-2 bg-gray-300 rounded flex-1'} style={{ width: `${60 + i * 15}px` }}></div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className='py-20 bg-gradient-to-r from-[#F97316] to-orange-500'>
-        <div className='max-w-7xl mx-auto px-4'>
-          <div className='grid md:grid-cols-4 gap-8 text-white'>
-            <div className='text-center'>
-              <p className='text-5xl font-bold mb-2'>5K+</p>
-              <p className='text-orange-100 text-lg'>Membres Actifs</p>
-            </div>
-            <div className='text-center'>
-              <p className='text-5xl font-bold mb-2'>50K+</p>
-              <p className='text-orange-100 text-lg'>Messages Partagés</p>
-            </div>
-            <div className='text-center'>
-              <p className='text-5xl font-bold mb-2'>200+</p>
-              <p className='text-orange-100 text-lg'>Églises Connectées</p>
-            </div>
-            <div className='text-center'>
-              <p className='text-5xl font-bold mb-2'>24/7</p>
-              <p className='text-orange-100 text-lg'>Support Disponible</p>
-            </div>
-          </div>
+      <section className={isDark ? 'py-16 px-4 sm:px-6 lg:px-8 bg-slate-800/50 border-y border-slate-700' : 'py-16 px-4 sm:px-6 lg:px-8 bg-white border-y border-gray-200'}>
+        <div className='max-w-7xl mx-auto'>
+          <motion.div
+            variants={containerVariants}
+            initial='hidden'
+            whileInView='visible'
+            viewport={{ once: true }}
+            className='grid grid-cols-2 md:grid-cols-4 gap-8'
+          >
+            {stats.map((stat, idx) => (
+              <motion.div
+                key={idx}
+                variants={itemVariants}
+                className='text-center'
+              >
+                <p className='text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#F97316] to-orange-400 bg-clip-text text-transparent'>
+                  {stat.number}
+                </p>
+                <p className={isDark ? 'text-slate-300 text-sm md:text-base mt-2' : 'text-gray-600 text-sm md:text-base mt-2'}>{stat.label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className={isDark ? 'py-24 px-4 sm:px-6 lg:px-8 bg-slate-800/30' : 'py-24 px-4 sm:px-6 lg:px-8 bg-gray-50'}>
+        <div className='max-w-7xl mx-auto'>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className='text-center mb-16'
+          >
+            <h2 className={isDark ? 'text-4xl md:text-5xl font-bold text-white mb-4' : 'text-4xl md:text-5xl font-bold text-gray-900 mb-4'}>
+              Fonctionnalités Extraordinaires
+            </h2>
+            <p className={isDark ? 'text-xl text-slate-300 max-w-2xl mx-auto' : 'text-xl text-gray-700 max-w-2xl mx-auto'}>
+              Découvrez tout ce que AmenNet offre pour votre vie spirituelle et communautaire
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={containerVariants}
+            initial='hidden'
+            whileInView='visible'
+            viewport={{ once: true }}
+            className='grid md:grid-cols-2 lg:grid-cols-3 gap-8'
+          >
+            {features.map((feature, idx) => {
+              const Icon = feature.icon
+              return (
+                <motion.div
+                  key={idx}
+                  variants={itemVariants}
+                  whileHover={{ y: -10 }}
+                  className={isDark ? 'bg-gradient-to-br from-slate-700 to-slate-800 rounded-xl p-8 border border-slate-600 hover:border-[#F97316] transition-all group cursor-pointer hover:shadow-xl hover:shadow-orange-500/10' : 'bg-white rounded-xl p-8 border border-gray-200 hover:border-[#F97316] transition-all group cursor-pointer hover:shadow-xl hover:shadow-orange-500/10'}
+                >
+                  <div className={`w-14 h-14 rounded-lg bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <Icon className='w-7 h-7 text-white' />
+                  </div>
+                  <h3 className={isDark ? 'text-xl font-bold text-white mb-3' : 'text-xl font-bold text-gray-900 mb-3'}>{feature.title}</h3>
+                  <p className={isDark ? 'text-slate-300' : 'text-gray-700'}>{feature.description}</p>
+                </motion.div>
+              )
+            })}
+          </motion.div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className='py-20 text-center'>
-        <h3 className='text-4xl font-bold text-gray-900 mb-6'>Prêt à Rejoindre la Communauté ?</h3>
-        <p className='text-xl text-gray-600 mb-8 max-w-2xl mx-auto'>
-          Crée ton compte en quelques secondes et commence à explorer, partager et grandir avec d'autres fidèles.
-        </p>
-        <NavLink to='/signin' className='inline-block px-10 py-4 bg-[#F97316] text-white rounded-xl font-bold text-lg hover:bg-orange-600 transition-all transform hover:scale-105 shadow-xl'>
-          S'inscrire Gratuitement
-        </NavLink>
+      <section className={isDark ? 'py-24 px-4 sm:px-6 lg:px-8 bg-slate-900' : 'py-24 px-4 sm:px-6 lg:px-8 bg-white'}>
+        <div className='max-w-4xl mx-auto'>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className='relative'
+          >
+            <div className='absolute inset-0 bg-gradient-to-r from-[#F97316]/20 to-blue-500/20 rounded-3xl blur-3xl'></div>
+            <div className='relative bg-gradient-to-r from-[#F97316] to-orange-600 rounded-3xl p-12 md:p-16 text-center'>
+              <Flame className='w-12 h-12 text-white mx-auto mb-4' />
+              <h2 className='text-4xl md:text-5xl font-bold text-white mb-4'>
+                Prêt à Rejoindre AmenNet?
+              </h2>
+              <p className='text-orange-100 text-lg mb-8 max-w-2xl mx-auto'>
+                Rejoignez notre communauté mondiale de fidèles, d'églises et de partenaires spirituels dès aujourd'hui
+              </p>
+              <motion.div
+                className='flex gap-4 justify-center flex-wrap'
+              >
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/signin')}
+                  className='px-10 py-4 bg-white text-[#F97316] rounded-lg font-bold text-lg hover:shadow-xl transition-all'
+                >
+                  Créer un Compte
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate('/login')}
+                  className='px-10 py-4 border-2 border-white text-white rounded-lg font-bold text-lg hover:bg-white/10 transition-all'
+                >
+                  Se Connecter
+                </motion.button>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className='bg-gray-900 text-gray-300 py-12'>
-        <div className='max-w-7xl mx-auto px-4 text-center'>
-          <p className='mb-4 text-2xl font-bold text-orange-400'>AmenNet</p>
-          <p className='mb-2'>Connecté par la Foi • Unie dans l'Amour</p>
-          <p className='text-gray-500 text-sm'>© 2026 AmenNet. Tous droits réservés.</p>
+      <footer className={isDark ? 'border-t border-slate-700 py-12 px-4 sm:px-6 lg:px-8 bg-slate-900' : 'border-t border-gray-200 py-12 px-4 sm:px-6 lg:px-8 bg-white'}>
+        <div className='max-w-7xl mx-auto'>
+          <div className='grid md:grid-cols-4 gap-8 mb-8'>
+            <div>
+              <div className='w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-orange-600 flex items-center justify-center text-white font-bold text-xl mb-3'>
+                A
+              </div>
+              <p className={isDark ? 'text-slate-400' : 'text-gray-700'}>Connectez votre foi, inspirez votre communauté</p>
+            </div>
+            <div>
+              <h4 className={isDark ? 'font-bold text-white mb-4' : 'font-bold text-gray-900 mb-4'}>Produit</h4>
+              <ul className={isDark ? 'space-y-2 text-slate-400 text-sm' : 'space-y-2 text-gray-700 text-sm'}>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Fonctionnalités</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Tarifs</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Sécurité</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className={isDark ? 'font-bold text-white mb-4' : 'font-bold text-gray-900 mb-4'}>Communauté</h4>
+              <ul className={isDark ? 'space-y-2 text-slate-400 text-sm' : 'space-y-2 text-gray-700 text-sm'}>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Blog</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Support</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Contact</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className={isDark ? 'font-bold text-white mb-4' : 'font-bold text-gray-900 mb-4'}>Légal</h4>
+              <ul className={isDark ? 'space-y-2 text-slate-400 text-sm' : 'space-y-2 text-gray-700 text-sm'}>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Confidentialité</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Conditions</a></li>
+                <li><a href='#' className={isDark ? 'hover:text-white transition' : 'hover:text-[#F97316] transition'}>Cookies</a></li>
+              </ul>
+            </div>
+          </div>
+          <div className={isDark ? 'border-t border-slate-700 pt-8' : 'border-t border-gray-200 pt-8'}>
+            <p className={isDark ? 'text-slate-400 text-center text-sm' : 'text-gray-700 text-center text-sm'}>
+              © 2026 AmenNet. Tous droits réservés. • Construire une communauté de foi plus forte
+            </p>
+          </div>
         </div>
       </footer>
     </div>

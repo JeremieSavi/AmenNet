@@ -4,8 +4,10 @@ import { auth, db } from '../services/fiebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate, NavLink } from 'react-router-dom';
 import { Mail, Lock, User, MapPin, Briefcase, Heart, ArrowRight, Building2, Users } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Signin() {
+    const { isDark } = useTheme()
     const [accountType, setAccountType] = useState('Fidèle') // Fidèle ou Église
     const [formData, setFormData] = useState({
         nom: '',
@@ -92,14 +94,14 @@ function Signin() {
     }
 
     return (
-        <div className='min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4'>
+        <div className={isDark ? 'min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4' : 'min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4'}>
             {/* Left Side - Branding */}
             <div className='hidden lg:flex lg:w-1/2 flex-col justify-center items-center pr-12'>
                 <div className='text-center'>
                     <h1 className='text-7xl font-bold bg-gradient-to-r from-[#F97316] to-orange-500 bg-clip-text text-transparent mb-4'>
                         AmenNet
                     </h1>
-                    <p className='text-2xl text-gray-700 font-semibold mb-8'>
+                    <p className={isDark ? 'text-2xl text-gray-300 font-semibold mb-8' : 'text-2xl text-gray-700 font-semibold mb-8'}>
                         La Communauté Chrétienne Qui Inspire
                     </p>
                     
@@ -109,8 +111,8 @@ function Signin() {
                                 <Heart className='w-6 h-6 text-white' />
                             </div>
                             <div className='text-left'>
-                                <p className='font-bold text-gray-900'>Partage Authentique</p>
-                                <p className='text-gray-600'>Exprime ta foi librement</p>
+                                <p className={isDark ? 'font-bold text-gray-100' : 'font-bold text-gray-900'}>Partage Authentique</p>
+                                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Exprime ta foi librement</p>
                             </div>
                         </div>
 
@@ -119,8 +121,8 @@ function Signin() {
                                 <User className='w-6 h-6 text-white' />
                             </div>
                             <div className='text-left'>
-                                <p className='font-bold text-gray-900'>Communauté Bienveillante</p>
-                                <p className='text-gray-600'>Connecte avec d'autres fidèles</p>
+                                <p className={isDark ? 'font-bold text-gray-100' : 'font-bold text-gray-900'}>Communauté Bienveillante</p>
+                                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Connecte avec d'autres fidèles</p>
                             </div>
                         </div>
 
@@ -129,14 +131,14 @@ function Signin() {
                                 <MapPin className='w-6 h-6 text-white' />
                             </div>
                             <div className='text-left'>
-                                <p className='font-bold text-gray-900'>Découvre Localement</p>
-                                <p className='text-gray-600'>Trouve les églises près de toi</p>
+                                <p className={isDark ? 'font-bold text-gray-100' : 'font-bold text-gray-900'}>Découvre Localement</p>
+                                <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>Trouve les églises près de toi</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className='bg-orange-100 border-l-4 border-[#F97316] p-6 rounded-lg'>
-                        <p className='text-gray-800 italic'>
+                    <div className={isDark ? 'bg-slate-700 border-l-4 border-[#F97316] p-6 rounded-lg' : 'bg-orange-100 border-l-4 border-[#F97316] p-6 rounded-lg'}>
+                        <p className={isDark ? 'text-gray-300 italic' : 'text-gray-800 italic'}>
                             "Encouragez-vous les uns les autres et construisez-vous mutuellement, car c'est ce qui vous édifie." - 1 Thes 5:11
                         </p>
                     </div>
@@ -144,10 +146,10 @@ function Signin() {
             </div>
 
             {/* Right Side - Form */}
-            <div className='w-full lg:w-1/2 max-w-md'>
-                <div className='bg-white rounded-2xl shadow-2xl p-8 border border-orange-100'>
-                    <h2 className='text-3xl font-bold text-gray-900 mb-2'>Créer un Compte</h2>
-                    <p className='text-gray-600 mb-6'>Rejoins la communauté AmenNet aujourd'hui</p>
+            <div className='w-full lg:w-1/2 max-w-md max-h-[90vh] overflow-y-auto'>
+                <div className={isDark ? 'bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-700' : 'bg-white rounded-2xl shadow-2xl p-8 border border-orange-100'}>
+                    <h2 className={isDark ? 'text-3xl font-bold text-gray-100 mb-2' : 'text-3xl font-bold text-gray-900 mb-2'}>Créer un Compte</h2>
+                    <p className={isDark ? 'text-gray-400 mb-6' : 'text-gray-600 mb-6'}>Rejoins la communauté AmenNet aujourd'hui</p>
 
                     {error && (
                         <div className='mb-6 p-4 bg-red-50 border border-red-200 rounded-lg'>
@@ -158,7 +160,7 @@ function Signin() {
                     <form onSubmit={handleSignin} className='space-y-4'>
                         {/* Type de Compte Selection */}
                         <div className='mb-6'>
-                            <label className='block text-sm font-semibold text-gray-700 mb-3'>Type de Compte *</label>
+                            <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-3' : 'block text-sm font-semibold text-gray-700 mb-3'}>Type de Compte *</label>
                             <div className='grid grid-cols-2 gap-3'>
                                 {/* Fidèle */}
                                 <button
@@ -166,15 +168,15 @@ function Signin() {
                                     onClick={() => setAccountType('Fidèle')}
                                     className={`p-4 rounded-lg border-2 transition-all ${
                                         accountType === 'Fidèle'
-                                            ? 'border-[#F97316] bg-orange-50'
-                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? isDark ? 'border-[#F97316] bg-slate-700' : 'border-[#F97316] bg-orange-50'
+                                            : isDark ? 'border-slate-600 bg-slate-700 hover:border-slate-500' : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}
                                 >
-                                    <Users className={`w-6 h-6 mx-auto mb-2 ${accountType === 'Fidèle' ? 'text-[#F97316]' : 'text-gray-400'}`} />
-                                    <p className={`text-sm font-semibold ${accountType === 'Fidèle' ? 'text-[#F97316]' : 'text-gray-700'}`}>
+                                    <Users className={`w-6 h-6 mx-auto mb-2 ${accountType === 'Fidèle' ? 'text-[#F97316]' : isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+                                    <p className={`text-sm font-semibold ${accountType === 'Fidèle' ? 'text-[#F97316]' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                         Fidèle
                                     </p>
-                                    <p className='text-xs text-gray-500 mt-1'>Personnel</p>
+                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Personnel</p>
                                 </button>
 
                                 {/* Église */}
@@ -183,15 +185,15 @@ function Signin() {
                                     onClick={() => setAccountType('Église')}
                                     className={`p-4 rounded-lg border-2 transition-all ${
                                         accountType === 'Église'
-                                            ? 'border-[#F97316] bg-orange-50'
-                                            : 'border-gray-200 bg-white hover:border-gray-300'
+                                            ? isDark ? 'border-[#F97316] bg-slate-700' : 'border-[#F97316] bg-orange-50'
+                                            : isDark ? 'border-slate-600 bg-slate-700 hover:border-slate-500' : 'border-gray-200 bg-white hover:border-gray-300'
                                     }`}
                                 >
-                                    <Building2 className={`w-6 h-6 mx-auto mb-2 ${accountType === 'Église' ? 'text-[#F97316]' : 'text-gray-400'}`} />
-                                    <p className={`text-sm font-semibold ${accountType === 'Église' ? 'text-[#F97316]' : 'text-gray-700'}`}>
+                                    <Building2 className={`w-6 h-6 mx-auto mb-2 ${accountType === 'Église' ? 'text-[#F97316]' : isDark ? 'text-gray-400' : 'text-gray-400'}`} />
+                                    <p className={`text-sm font-semibold ${accountType === 'Église' ? 'text-[#F97316]' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                                         Église
                                     </p>
-                                    <p className='text-xs text-gray-500 mt-1'>Officiellement</p>
+                                    <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Officiellement</p>
                                 </button>
                             </div>
                         </div>
@@ -199,11 +201,11 @@ function Signin() {
                         {/* Nom & Prénom */}
                         <div className='grid grid-cols-2 gap-4'>
                             <div>
-                                <label className='block text-sm font-semibold text-gray-700 mb-2'>
+                                <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>
                                     {accountType === 'Église' ? 'Responsable Prénom' : 'Prénom'} *
                                 </label>
                                 <div className='relative'>
-                                    <User className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                    <User className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                     <input
                                         type="text"
                                         name='prenom'
@@ -211,16 +213,16 @@ function Signin() {
                                         onChange={handleChange}
                                         placeholder='Jean'
                                         required
-                                        className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                        className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className='block text-sm font-semibold text-gray-700 mb-2'>
+                                <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>
                                     {accountType === 'Église' ? 'Responsable Nom' : 'Nom'} *
                                 </label>
                                 <div className='relative'>
-                                    <User className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                    <User className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                     <input
                                         type="text"
                                         name='nom'
@@ -228,7 +230,7 @@ function Signin() {
                                         onChange={handleChange}
                                         placeholder='Dupont'
                                         required
-                                        className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                        className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                     />
                                 </div>
                             </div>
@@ -238,31 +240,31 @@ function Signin() {
                         {accountType === 'Église' && (
                             <>
                                 <div>
-                                    <label className='block text-sm font-semibold text-gray-700 mb-2'>Nom de l'Église *</label>
+                                    <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Nom de l'Église *</label>
                                     <div className='relative'>
-                                        <Building2 className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                        <Building2 className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                         <input
                                             type="text"
                                             name='egliseName'
                                             value={formData.egliseName}
                                             onChange={handleChange}
                                             placeholder='Ex: Église de la Grâce'
-                                            className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                            className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className='block text-sm font-semibold text-gray-700 mb-2'>Adresse de l'Église</label>
+                                    <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Adresse de l'Église</label>
                                     <div className='relative'>
-                                        <MapPin className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                        <MapPin className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                         <input
                                             type="text"
                                             name='egliseAdresse'
                                             value={formData.egliseAdresse}
                                             onChange={handleChange}
                                             placeholder='Ex: 123 Rue de la Foi'
-                                            className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                            className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                         />
                                     </div>
                                 </div>
@@ -273,31 +275,33 @@ function Signin() {
                         {accountType === 'Fidèle' && (
                             <div className='grid grid-cols-2 gap-4'>
                                 <div>
-                                    <label className='block text-sm font-semibold text-gray-700 mb-2'>Profession</label>
+                                    <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Profession</label>
                                     <div className='relative'>
-                                        <Briefcase className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                        <Briefcase className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                         <input
                                             type="text"
                                             name='profession'
                                             value={formData.profession}
                                             onChange={handleChange}
                                             placeholder='Ex: Ingénieur'
-                                            className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                            className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className='block text-sm font-semibold text-gray-700 mb-2'>Quartier</label>
+                                    <label className={isDark ? 'block text-sm font-semibold text-gray-200 mb-2' : 'block text-sm font-semibold text-gray-700 mb-2'}>Quartier</label>
                                     <div className='relative'>
-                                        <MapPin className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+                                        <MapPin className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
                                         <input
                                             type="text"
                                             name='quatier'
                                             value={formData.quatier}
                                             onChange={handleChange}
                                             placeholder='Ex: Centre-Ville'
-                                            className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'
+                                            className={isDark ? 'w-full pl-10 pr-4 py-3 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' : 'w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200'}
                                         />
+                                            {/* className='w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316] focus:border-transparent transition-all duration-200' */}
+                                    
                                     </div>
                                 </div>
                             </div>

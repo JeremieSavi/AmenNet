@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore'
 import { useNavigate } from 'react-router-dom'
+import { useTheme } from '../contexts/ThemeContext'
 import { 
   Briefcase, MapPin, Calendar, Clock, ExternalLink, Plus, Search, X, Trash2, Bookmark,
   AlertCircle, Heart, MessageCircle, Edit2, Check
@@ -32,6 +33,7 @@ import { createOpportunityPublishedNotification } from '../services/notification
 
 function Opportunites() {
   const navigate = useNavigate()
+  const { isDark } = useTheme()
   const [user, setUser] = useState(null)
   const [userData, setUserData] = useState(null)
   const [opportunities, setOpportunities] = useState([])
@@ -367,7 +369,7 @@ function Opportunites() {
   }
 
   return (
-    <div className='bg-gray-50 min-h-screen pb-24'>
+    <div className={isDark ? 'bg-slate-900 min-h-screen pb-24' : 'bg-gray-50 min-h-screen pb-24'}>
       <div className='max-w-6xl mx-auto p-4 space-y-6'>
         {/* En-tête */}
         <motion.div
@@ -410,8 +412,8 @@ function Opportunites() {
             transition={{ duration: 0.3 }}
             className='overflow-hidden'
           >
-            <form onSubmit={handleSaveOpportunity} className='bg-white rounded-xl shadow-lg border border-gray-200 p-6 space-y-4'>
-              <h3 className='text-xl font-bold text-gray-900 mb-4'>
+            <form onSubmit={handleSaveOpportunity} className={isDark ? 'bg-slate-800 rounded-xl shadow-lg border border-slate-700 p-6 space-y-4' : 'bg-white rounded-xl shadow-lg border border-gray-200 p-6 space-y-4'}>
+              <h3 className={isDark ? 'text-xl font-bold text-gray-100 mb-4' : 'text-xl font-bold text-gray-900 mb-4'}>
                 {editingOppId ? 'Modifier l\'opportunité' : 'Créer une opportunité'}
               </h3>
 
@@ -421,15 +423,15 @@ function Opportunites() {
                   placeholder='Titre*'
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className='px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                  className={isDark ? 'px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
                   required
                 />
 
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className='px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
-                >
+                  className={isDark ? 'px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}>
+                
                   {Object.entries(types).map(([key, { emoji, label }]) => (
                     <option key={key} value={key}>{emoji} {label}</option>
                   ))}
@@ -440,14 +442,14 @@ function Opportunites() {
                   placeholder='Lieu'
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className='px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                  className={isDark ? 'px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
                 />
 
                 <input
                   type='date'
                   value={formData.deadline}
                   onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  className='px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                  className={isDark ? 'px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
                 />
 
                 <input
@@ -455,7 +457,7 @@ function Opportunites() {
                   placeholder='Lien de candidature'
                   value={formData.link}
                   onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  className='px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                  className={isDark ? 'px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
                 />
               </div>
 
@@ -464,7 +466,7 @@ function Opportunites() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows='4'
-                className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                className={isDark ? 'w-full px-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
                 required
               ></textarea>
 
@@ -472,7 +474,7 @@ function Opportunites() {
                 <button
                   type='button'
                   onClick={handleCancelEdit}
-                  className='px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold'
+                  className={isDark ? 'px-6 py-2 border border-slate-600 text-gray-300 rounded-lg hover:bg-slate-700 font-semibold' : 'px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-semibold'}
                 >
                   Annuler
                 </button>
@@ -488,15 +490,15 @@ function Opportunites() {
           </motion.div>
 
           {/* Recherche et filtres */}
-          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4'>
+          <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-4 space-y-4' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-4 space-y-4'}>
             <div className='relative'>
-              <Search className='absolute left-3 top-3 w-5 h-5 text-gray-400' />
+              <Search className={isDark ? 'absolute left-3 top-3 w-5 h-5 text-gray-500' : 'absolute left-3 top-3 w-5 h-5 text-gray-400'} />
               <input
                 type='text'
                 placeholder='Rechercher...'
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className='w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'
+                className={isDark ? 'w-full pl-10 pr-4 py-2 border border-slate-600 bg-slate-700 text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]' : 'w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F97316]'}
               />
             </div>
 

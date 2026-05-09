@@ -3,8 +3,10 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth, db } from '../services/fiebase'
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore'
 import { Bell, Trash2, CheckCircle2, MessageCircle, Users, Heart, MessageSquare, Church } from 'lucide-react'
+import { useTheme } from '../contexts/ThemeContext'
 
 function Notifications() {
+  const { isDark } = useTheme()
   const [user, setUser] = useState(null)
   const [notifications, setNotifications] = useState([])
   const [loading, setLoading] = useState(true)
@@ -141,14 +143,14 @@ function Notifications() {
   }
 
   return (
-    <div className='bg-gray-50 min-h-screen pb-24'>
+    <div className={isDark ? 'bg-slate-900 min-h-screen pb-24' : 'bg-gray-50 min-h-screen pb-24'}>
       <div className='max-w-2xl mx-auto p-4 space-y-4'>
         {/* En-tête */}
-        <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-0 z-30'>
+        <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-6 sticky top-0 z-30' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-0 z-30'}>
           <div className='flex items-center justify-between'>
             <div className='flex items-center space-x-3'>
               <Bell className='w-6 h-6 text-[#F97316]' />
-              <h1 className='text-2xl font-bold text-gray-900'>Notifications</h1>
+              <h1 className={isDark ? 'text-2xl font-bold text-gray-100' : 'text-2xl font-bold text-gray-900'}>Notifications</h1>
               {notifications.filter(n => !n.read).length > 0 && (
                 <span className='bg-red-500 text-white text-xs font-semibold px-3 py-1 rounded-full'>
                   {notifications.filter(n => !n.read).length} nouvelle(s)
@@ -168,10 +170,10 @@ function Notifications() {
 
         {/* Liste des notifications */}
         {notifications.length === 0 ? (
-          <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'>
-            <Bell className='w-12 h-12 text-gray-300 mx-auto mb-4' />
-            <p className='text-gray-600 font-medium'>Aucune notification</p>
-            <p className='text-sm text-gray-500 mt-1'>
+          <div className={isDark ? 'bg-slate-800 rounded-xl shadow-sm border border-slate-700 p-12 text-center' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center'}>
+            <Bell className={isDark ? 'w-12 h-12 text-gray-600 mx-auto mb-4' : 'w-12 h-12 text-gray-300 mx-auto mb-4'} />
+            <p className={isDark ? 'text-gray-300 font-medium' : 'text-gray-600 font-medium'}>Aucune notification</p>
+            <p className={isDark ? 'text-sm text-gray-400 mt-1' : 'text-sm text-gray-500 mt-1'}>
               Vous recevrez une notification quand quelqu'un vous envoie une demande, accepte votre demande ou vous envoie un message.
             </p>
           </div>
