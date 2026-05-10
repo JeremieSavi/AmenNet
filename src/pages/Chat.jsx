@@ -257,7 +257,7 @@ function Chat() {
               ))
             )}
           </div>
-        </div>
+  
         </motion.div>
       )}
 
@@ -494,10 +494,6 @@ function Chat() {
             </div>
           </form>
         </motion.div>
-      ) : (
-        <div className="flex-1 flex items-center justify-center">
-          <p className={isDark ? 'text-gray-400' : 'text-gray-500'}>Sélectionnez une conversation</p>
-        </div>
       )}
     </div>
   )
