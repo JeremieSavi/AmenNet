@@ -66,8 +66,8 @@ function DashboardLayout() {
     <div className={isDark ? 'flex flex-col min-h-screen bg-slate-900' : 'flex flex-col min-h-screen bg-white'}>
       {/* En-tête */}
       <header className={isDark ? 'bg-slate-800 shadow-sm border-b border-slate-700 sticky top-0 z-40' : 'bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40'}>
-        <div className='max-w-7xl mx-auto px-4 py-3 flex justify-between items-center'>
-          <h1 className='text-2xl font-bold text-[#F97316]'>AmenNet</h1>
+        <div className='max-w-7xl mx-auto px-2 sm:px-4 py-2 sm:py-3 flex justify-between items-center'>
+          <h1 className='text-lg sm:text-2xl font-bold text-[#F97316]'>AmenNet</h1>
           <div className='relative'>
             <button
               onClick={() => setShowMenu(!showMenu)}
@@ -106,7 +106,7 @@ function DashboardLayout() {
       </header>
 
       {/* Contenu */}
-      <main className='flex-1'>
+      <main className='flex-1 flex flex-col pb-20 overflow-y-auto'>
         <Outlet />
       </main>
 

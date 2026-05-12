@@ -207,7 +207,7 @@ function Chat() {
   }
 
   return (
-    <div className={`flex h-[calc(100vh-135px)] overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+    <div className={`flex h-full overflow-hidden ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
 
       {/* CONVERSATIONS LIST */}
       {(!isMobileView || !selectedConversation) && (
@@ -217,17 +217,17 @@ function Chat() {
           className={`${isMobileView ? 'w-full' : 'w-96'} border-r flex flex-col ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
           
           {/* HEADER */}
-          <div className={`p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
-            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Messages</h1>
+          <div className={`p-3 sm:p-4 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+            <h1 className={`text-lg sm:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Messages</h1>
           </div>
 
           {/* SEARCH */}
-          <div className={`p-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className={`p-2 sm:p-3 border-b ${isDark ? 'border-slate-700' : 'border-gray-200'}`}>
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-gray-100'}`}>
-              <Search size={18} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
+              <Search size={16} className={isDark ? 'text-gray-400' : 'text-gray-500'} />
               <input
                 placeholder="Chercher..."
-                className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
+                className={`flex-1 bg-transparent outline-none text-xs sm:text-sm ${isDark ? 'text-white placeholder-gray-400' : 'text-gray-900 placeholder-gray-500'}`}
               />
             </div>
           </div>
@@ -244,15 +244,15 @@ function Chat() {
                 <motion.div
                   key={comp.id}
                   onClick={() => handleSelectConversation(comp)}
-                  className={`p-4 border-b cursor-pointer transition ${
+                  className={`p-3 sm:p-4 border-b cursor-pointer transition ${
                     selectedConversation?.companion.id === comp.id
                       ? isDark ? 'bg-slate-700' : 'bg-orange-50'
                       : isDark ? 'hover:bg-slate-700' : 'hover:bg-gray-100'
                   } ${isDark ? 'border-slate-700' : 'border-gray-200'}`}
                   whileHover={{ x: 4 }}
                 >
-                  <p className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.prenom}</p>
-                  <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.email}</p>
+                  <p className={`font-medium text-sm sm:text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.prenom}</p>
+                  <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.email}</p>
                 </motion.div>
               ))
             )}
@@ -269,20 +269,20 @@ function Chat() {
           className={`${isMobileView ? 'w-full' : 'flex-1'} flex flex-col min-h-0`}>
 
           {/* HEADER */}
-          <div className={`p-4 border-b flex-shrink-0 flex items-center gap-3 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+          <div className={`p-3 sm:p-4 border-b flex-shrink-0 flex items-center gap-2 sm:gap-3 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
             {isMobileView && (
               <button onClick={() => setSelectedConversation(null)} className={isDark ? 'text-gray-300 hover:text-orange-400' : 'text-gray-600 hover:text-orange-500'} title="Retour">
-                <ArrowLeft size={20} />
+                <ArrowLeft size={18} />
               </button>
             )}
             <div>
-              <h3 className={`font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedConversation.companion.prenom}</h3>
-              <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{selectedConversation.companion.email}</p>
+              <h3 className={`font-bold text-sm sm:text-base ${isDark ? 'text-white' : 'text-gray-900'}`}>{selectedConversation.companion.prenom}</h3>
+              <p className={`text-xs sm:text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{selectedConversation.companion.email}</p>
             </div>
           </div>
 
           {/* MESSAGES */}
-          <div className={`flex-1 min-h-0 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
+          <div className={`flex-1 min-h-0 overflow-y-auto p-2 sm:p-4 space-y-3 sm:space-y-4 ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
             {messages.length === 0 ? (
               <div className={`flex items-center justify-center h-full opacity-50 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 <MessageCircle size={32} />
@@ -311,37 +311,37 @@ function Chat() {
                         animate={{ opacity: 1, y: 0 }}
                         onMouseEnter={() => msg.senderId !== user?.uid && handleMarkAsRead(msg.id)}
                       >
-                        <div className="flex flex-col gap-1 max-w-sm">
+                        <div className="flex flex-col gap-1 max-w-xs sm:max-w-sm">
                           {editingId === msg.id ? (
-                            <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-700' : 'bg-gray-300'}`}>
+                            <div className={`rounded-xl p-2 sm:p-3 ${isDark ? 'bg-slate-700' : 'bg-gray-300'}`}>
                               <textarea
                                 autoFocus
                                 value={editingText}
                                 onChange={(e) => setEditingText(e.target.value)}
-                                className={`w-full px-3 py-2 rounded-lg border-2 ${isDark ? 'bg-slate-600 border-orange-500 text-white' : 'bg-white border-orange-400 text-gray-900'} focus:outline-none`}
+                                className={`w-full px-3 py-2 rounded-lg border-2 text-sm ${isDark ? 'bg-slate-600 border-orange-500 text-white' : 'bg-white border-orange-400 text-gray-900'} focus:outline-none`}
                               />
-                              <div className="flex gap-2 mt-2">
+                              <div className="flex gap-1 sm:gap-2 mt-2">
                                 <button
                                   onClick={() => handleEditMessage(msg.id)}
-                                  className={`p-1.5 rounded ${isDark ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
+                                  className={`p-1 sm:p-1.5 rounded ${isDark ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white`}
                                 >
-                                  <Check size={16} />
+                                  <Check size={14} />
                                 </button>
                                 <button
                                   onClick={() => {
                                     setEditingId(null)
                                     setEditingText('')
                                   }}
-                                  className={`p-1.5 rounded ${isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white`}
+                                  className={`p-1 sm:p-1.5 rounded ${isDark ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white`}
                                 >
-                                  <X size={16} />
+                                  <X size={14} />
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <>
                               <div
-                                className={`rounded-2xl px-4 py-2 group/msg relative ${
+                                className={`rounded-2xl px-3 sm:px-4 py-2 group/msg relative text-sm sm:text-base ${
                                   msg.senderId === user?.uid
                                     ? isDark ?'bg-orange-600' : 'bg-orange-500 text-white'
                                     : isDark ? 'bg-slate-700 text-white' : 'bg-gray-200 text-gray-900'
@@ -445,25 +445,25 @@ function Chat() {
           </div>
 
           {/* INPUT FORM - WHATSAPP STYLE */}
-          <form onSubmit={handleSendMessage} className={`p-4 border-t flex-shrink-0 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
-            <div className="flex gap-2 items-center">
+          <form onSubmit={handleSendMessage} className={`p-2 sm:p-4 border-t flex-shrink-0 ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-200 bg-white'}`}>
+            <div className="flex gap-1 sm:gap-2 items-center">
               
               {/* ATTACHMENT BUTTON */}
               <button
                 type="button"
-                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
+                className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
                 title="Ajouter une pièce jointe"
               >
-                <Plus size={24} />
+                <Plus size={20} className="sm:w-6 sm:h-6" />
               </button>
 
               {/* EMOJI BUTTON */}
               <button
                 type="button"
-                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
+                className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${isDark ? 'text-orange-500 hover:bg-slate-700' : 'text-orange-600 hover:bg-gray-100'}`}
                 title="Ajouter un emoji"
               >
-                <Smile size={24} />
+                <Smile size={20} className="sm:w-6 sm:h-6" />
               </button>
 
               {/* TEXT INPUT */}
@@ -479,16 +479,16 @@ function Chat() {
                 }}
                 placeholder="Votre message..."
                 rows={1}
-                className={`flex-1 px-4 py-2.5 rounded-3xl border-0 font-medium transition resize-none max-h-32 ${isDark ? 'bg-slate-700 text-white placeholder-gray-300 focus:ring-2 focus:ring-orange-500' : 'bg-gray-100 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500'} focus:outline-none`}
+                className={`flex-1 px-3 sm:px-4 py-2 sm:py-2.5 rounded-3xl border-0 font-medium transition resize-none max-h-32 text-sm sm:text-base ${isDark ? 'bg-slate-700 text-white placeholder-gray-300 focus:ring-2 focus:ring-orange-500' : 'bg-gray-100 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-orange-500'} focus:outline-none`}
               />
 
               {/* SEND/MIC BUTTON */}
               <button
                 type="submit"
-                className={`p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${newMessage.trim() ? isDark ? 'text-orange-500 hover:text-orange-400' : 'text-orange-600 hover:text-orange-700' : isDark ? 'text-slate-500 hover:text-slate-400' : 'text-gray-400 hover:text-gray-500'}`}
+                className={`p-2 sm:p-2.5 rounded-full flex-shrink-0 transition hover:scale-110 ${newMessage.trim() ? isDark ? 'text-orange-500 hover:text-orange-400' : 'text-orange-600 hover:text-orange-700' : isDark ? 'text-slate-500 hover:text-slate-400' : 'text-gray-400 hover:text-gray-500'}`}
                 title={newMessage.trim() ? "Envoyer" : "Message vocal"}
               >
-                {newMessage.trim() ? <Send size={24} /> : <Mic size={24} />}
+                {newMessage.trim() ? <Send size={20} className="sm:w-6 sm:h-6" /> : <Mic size={20} className="sm:w-6 sm:h-6" />}
               </button>
 
             </div>
